@@ -45,7 +45,7 @@ input:focus-visible,button:focus-visible{outline:2px solid #c78bff;outline-offse
 .logo small{display:block;font-size:11px;color:var(--muted)}
 .bal{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:5px 16px 5px 5px;background:#150c33;font-weight:600}
 .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#9a5cff,#ff4fd8);display:grid;place-items:center;font-size:18px}
-.ac{flex:1;overflow:auto;padding:22px 16px}
+.ac{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 12px}
 .ac h2{margin:0 0 6px;font-size:22px;font-weight:600}
 .ac p{color:var(--muted);margin:0 0 14px}
 .nav{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:8px;border-top:1px solid var(--line);background:#0e0724}
@@ -77,9 +77,9 @@ input:focus-visible,button:focus-visible{outline:2px solid #c78bff;outline-offse
 .nav .tabs button{background:none;border:0;border-radius:16px;padding:0;box-shadow:none;cursor:pointer}
 .nav .tabs button[aria-current="true"]{background:rgba(190,110,255,.18);box-shadow:inset 0 -3px 0 #fff,0 0 16px rgba(190,110,255,.5)}
 .nav .tabs button:focus-visible{outline:2px solid #fff;outline-offset:-3px}
-.games{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0 20px}
-.games button{padding:0;border:0;background:none;border-radius:16px;cursor:pointer;line-height:0;overflow:hidden}
-.games img{width:100%;height:auto;display:block}
+.games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:4px 0 20px}
+.games button{min-width:0;width:100%;padding:0;border:0;background:none;border-radius:16px;cursor:pointer;line-height:0;overflow:hidden}
+.games img{width:100%;max-width:100%;height:auto;display:block}
 .games button:focus-visible{outline:2px solid #c78bff;outline-offset:2px}
 .games button:active{transform:scale(.98)}
 .avbtn{background:none;border:0;padding:0;cursor:pointer;line-height:0;border-radius:50%}
