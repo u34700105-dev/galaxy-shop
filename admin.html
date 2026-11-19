@@ -77,6 +77,7 @@ input:focus-visible,button:focus-visible{outline:2px solid #c78bff;outline-offse
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,doc,getDoc,updateDoc,collection,query,where,onSnapshot,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {findPack} from "./packs.js";
 const app=initializeApp({
   apiKey:"AIzaSyBn5DB363vlF__1KjhPEgEqGgONiaXZq10",
   authDomain:"galaxy-shop-8cb4b.firebaseapp.com",
@@ -145,10 +146,12 @@ function viewOrders(){
       const cp=el('button','btn alt','คัดลอก');cp.style.cssText='height:30px;margin-left:8px;padding:0 10px;font-size:13px';
       cp.onclick=async()=>{try{await navigator.clipboard.writeText(o.playerId);cp.textContent='คัดลอกแล้ว'}catch(e){toast('คัดลอกไม่ได้')}};
       idr.appendChild(cp);c.appendChild(idr);
+      const pk=o.packId?findPack(o.packId):null,price=pk?pk.price:0;
       c.appendChild(el('div','','รายการ: '+o.item));
+      if(price)c.appendChild(el('div','ok','ราคา: '+fmt(price)+' กีบ (หักจากยอดลูกค้าตอนกดเติมเกมแล้ว)'));
       c.appendChild(el('div','mut',when(o.createdAt)));
       const ch=document.createElement('input');ch.inputMode='numeric';ch.placeholder='หักยอดลูกค้า (กีบ) ไม่บังคับ';ch.style.marginTop='8px';ch.setAttribute('aria-label','หักยอดลูกค้า');
-      c.appendChild(ch);
+      if(price)ch.value=String(price);c.appendChild(ch);
       const r=el('div','row');
       const ok=el('button','btn','เติมเกมแล้ว ✓'),no=el('button','btn no','ยกเลิก');
       ok.onclick=async()=>{
