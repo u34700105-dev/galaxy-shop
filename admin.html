@@ -237,8 +237,44 @@ function parseAmt(s){const n=parseInt(String(s).replace(/[^0-9]/g,''),10);return
 
 /* 1) รายการสั่งซื้อ */
 function viewOrders(){
-  const box=setView('รายการสั่งซื้อที่รอเติม');
-  unsub=onSnapshot(query(collection(db,'orders'),where('status','==','pending')),snap=>{
+  const box0=setView('ออเดอร์');
+  const rbox=el('div'),box=el('div');box0.appendChild(rbox);box0.appendChild(box);
+  const u1=onSnapshot(query(collection(db,'orders'),where('status','==','review')),snap=>{
+    rbox.replaceChildren();
+    snap.docs.forEach(d=>{
+      const o={id:d.id,...d.data()};
+      const c=el('div','card');c.style.borderColor='#ff7b9c';
+      c.appendChild(el('b','err','⚠ ต้องตรวจสอบ: '+o.game));
+      c.appendChild(el('div','','ลูกค้า: '+o.username));
+      c.appendChild(el('div','','ไอดีผู้เล่น: '+o.playerId));
+      c.appendChild(el('div','',o.item+' · '+fmt(o.price)+' กีบ'));
+      c.appendChild(el('div','mut','รหัสอ้างอิงที่ 24TERM: '+o.id));
+      if(o.reviewReason)c.appendChild(el('div','mut',o.reviewReason));
+      const r=el('div','row');
+      const ok=el('button','btn','เติมสำเร็จแล้ว ✓'),rf=el('button','btn no','คืนเงินลูกค้า');
+      ok.onclick=async()=>{
+        if(!confirm('ยืนยันว่าเติมสำเร็จแล้ว?'))return;
+        ok.disabled=rf.disabled=true;
+        try{await updateDoc(doc(db,'orders',o.id),{status:'done',doneAt:serverTimestamp()})}catch(e){toast(emsg(e));ok.disabled=rf.disabled=false}
+      };
+      rf.onclick=async()=>{
+        if(!confirm('คืนเงิน '+fmt(o.price)+' กีบ ให้ '+o.username+' ?'))return;
+        ok.disabled=rf.disabled=true;
+        try{
+          await runTransaction(db,async tx=>{
+            const or=doc(db,'orders',o.id),os=await tx.get(or);
+            if(!os.exists()||os.data().status!=='review')throw new Error('ออเดอร์นี้ถูกจัดการไปแล้ว');
+            const ur=doc(db,'users',o.uid),us=await tx.get(ur);
+            if(!us.exists())throw new Error('ไม่พบบัญชีลูกค้า');
+            tx.update(ur,{balance:(us.data().balance||0)+o.price});
+            tx.update(or,{status:'failed',refunded:true,failureReason:'ทางร้านคืนเงินให้แล้ว',doneAt:serverTimestamp()});
+          });
+        }catch(e){toast(emsg(e));ok.disabled=rf.disabled=false}
+      };
+      r.appendChild(ok);r.appendChild(rf);c.appendChild(r);rbox.appendChild(c);
+    });
+  },e=>toast('โหลดออเดอร์ไม่สำเร็จ: '+(e.code||'')));
+  const u2=onSnapshot(query(collection(db,'orders'),where('status','==','pending')),snap=>{
     const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>secs(a)-secs(b));
     box.replaceChildren();
     if(!rows.length){box.appendChild(el('p','mut','ยังไม่มีออเดอร์ที่รอเติม'));return}
@@ -282,8 +318,8 @@ function viewOrders(){
       r.appendChild(ok);r.appendChild(no);c.appendChild(r);box.appendChild(c);
     });
   },e=>toast('โหลดออเดอร์ไม่สำเร็จ: '+(e.code||'')));
+  unsub=()=>{u1();u2()};
 }
-
 /* 2) ตรวจสลิปและเติมเงิน */
 function viewSlips(){
   const box=setView('สลิปที่รอตรวจสอบ');

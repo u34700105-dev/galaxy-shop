@@ -233,6 +233,7 @@ input:focus-visible,button:focus-visible{outline:2px solid #c78bff;outline-offse
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,doc,setDoc,serverTimestamp,onSnapshot,collection,addDoc,query,where} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 import {PACKS,findPack} from "./packs.js";
 const app=initializeApp({
   apiKey:"AIzaSyBn5DB363vlF__1KjhPEgEqGgONiaXZq10",
@@ -243,6 +244,8 @@ const app=initializeApp({
   appId:"1:854045350869:web:fba9a2ac3ce83bb7797b5c"
 });
 const auth=getAuth(app),db=getFirestore(app);
+const placeOrderFn=httpsCallable(getFunctions(app,'asia-southeast1'),'placeOrder');
+let autoMode=false;
 const DOMAIN='@galaxyshop.local';
 const $=id=>document.getElementById(id);
 const bad='ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
@@ -262,8 +265,8 @@ function gameGrid(){
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
 const fmt=n=>Number(n||0).toLocaleString('en-US');
 const when=ts=>{try{return ts.toDate().toLocaleString('th-TH')}catch(e){return ''}};
-const STAT={pending:'รอดำเนินการ',done:'เติมเกมแล้ว',approved:'เติมเงินแล้ว',rejected:'ไม่ผ่าน',cancelled:'ยกเลิก'};
-const chip=s=>{const c=el('span','chip'+(s==='done'||s==='approved'?' ok':(s==='rejected'||s==='cancelled'?' no':'')),STAT[s]||s);return c};
+const STAT={pending:'รอดำเนินการ',processing:'กำลังเติม...',review:'รอตรวจสอบ',failed:'ไม่สำเร็จ',done:'เติมเกมแล้ว',approved:'เติมเงินแล้ว',rejected:'ไม่ผ่าน',cancelled:'ยกเลิก'};
+const chip=s=>{const c=el('span','chip'+(s==='done'||s==='approved'?' ok':(s==='rejected'||s==='cancelled'||s==='failed'?' no':'')),STAT[s]||s);return c};
 let unTab=null,unBal=null,curBal=0;
 function stopTab(){if(unTab){unTab();unTab=null}}
 function compress(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const im=new Image();
@@ -332,9 +335,14 @@ function showPacks(g){
     if(curBal<sel.price){msg.textContent='ยอดเงินไม่พอ (มี '+fmt(curBal)+' กีบ) กรุณาเติมเครดิตก่อน';return}
     go.disabled=true;
     try{
-      await addDoc(collection(db,'orders'),{uid:auth.currentUser.uid,username:who,game:g.name,playerId:pid,item:sel.name,packId:sel.id,status:'pending',createdAt:serverTimestamp()});
-      msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
-    }catch(e){msg.textContent=errText(e)}
+      if(autoMode){
+        await placeOrderFn({game:g.id,packId:sel.id,playerId:pid});
+        msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ระบบกำลังเติมเกมให้อัตโนมัติ ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
+      }else{
+        await addDoc(collection(db,'orders'),{uid:auth.currentUser.uid,username:who,game:g.name,playerId:pid,item:sel.name,packId:sel.id,status:'pending',createdAt:serverTimestamp()});
+        msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
+      }
+    }catch(e){msg.textContent=(e&&String(e.code||'').indexOf('functions/')===0&&e.message&&e.message!=='internal')?e.message:errText(e)}
     go.disabled=false;
   };
 }
@@ -363,7 +371,7 @@ function renderOrders(ac){
     list.textContent='';
     if(!rows.length){list.appendChild(el('p','gs','ยังไม่มีรายการสั่งซื้อ'));return}
     rows.forEach(o=>{const c=el('div','it');const t=el('div');t.appendChild(chip(o.status));t.appendChild(el('b','',o.game));c.appendChild(t);
-      const pk=o.packId?findPack(o.packId):null;c.appendChild(el('div','',o.item+' · ID: '+o.playerId+(pk?' · '+fmt(pk.price)+' กีบ':'')));c.appendChild(el('div','mut',when(o.createdAt)));list.appendChild(c)});
+      const pk=o.packId?findPack(o.packId):null;c.appendChild(el('div','',o.item+' · ID: '+o.playerId+(pk?' · '+fmt(o.price||pk.price)+' กีบ':'')));if(o.failureReason)c.appendChild(el('div','mut',o.failureReason+(o.refunded?' (คืนเงินแล้ว)':'')));c.appendChild(el('div','mut',when(o.createdAt)));list.appendChild(c)});
   },()=>{list.textContent='โหลดรายการไม่สำเร็จ'});
 }
 function topupBcel(ac){
@@ -419,7 +427,9 @@ onAuthStateChanged(auth,u=>{
   if(unBal){unBal();unBal=null}
   stopTab();
   if(u){who=(u.email||'').replace(DOMAIN,'');showApp();
-    unBal=onSnapshot(doc(db,'users',u.uid),s=>{curBal=s.exists()?(s.data().balance||0):0;$('balnum').textContent=fmt(curBal)},()=>{});
+    const u1=onSnapshot(doc(db,'users',u.uid),s=>{curBal=s.exists()?(s.data().balance||0):0;$('balnum').textContent=fmt(curBal)},()=>{});
+    const u2=onSnapshot(doc(db,'config','shop'),s=>{autoMode=!!(s.exists()&&s.data().autoTopup===true)},()=>{autoMode=false});
+    unBal=()=>{u1();u2()};
   }else{$('balnum').textContent='0';showHome()}
 });
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
