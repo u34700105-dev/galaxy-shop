@@ -274,8 +274,16 @@ function compress(file){return new Promise((res,rej)=>{const url=URL.createObjec
     const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);URL.revokeObjectURL(url);
     let d=c.toDataURL('image/jpeg',0.6);if(d.length>650000)d=c.toDataURL('image/jpeg',0.4);res(d)};
   im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('อ่านรูปไม่ได้'))};im.src=url})}
+const SOON=new Set([]);
+function showSoon(g){
+  stopTab();
+  const ac=$('ac');ac.textContent='';
+  const b=el('button','back','‹ กลับไปเลือกเกม');b.type='button';b.style.margin='0 0 8px';b.onclick=()=>tab('home');
+  ac.appendChild(b);ac.appendChild(el('h2','gh',g.name));ac.appendChild(el('p','gs','กำลังปรับปรุงรายการ เร็วๆ นี้'));
+}
 function showGame(g){
   stopTab();
+  if(SOON.has(g.id)){showSoon(g);return}
   if(PACKS[g.id]){showPacks(g);return}
   showFree(g);
 }
@@ -305,7 +313,7 @@ function showPacks(g){
   const ac=$('ac'),data=PACKS[g.id];ac.textContent='';
   ac.appendChild(el('h2','gh',g.name));
   ac.appendChild(el('p','gs','กรอกไอดีผู้เล่น เลือกแพ็กเกจ แล้วกดสั่งซื้อ ห้ามกรอกรหัสผ่านเกม'));
-  const lab=el('label','lb','ไอดีผู้เล่น (Player ID)');lab.htmlFor='p_id';ac.appendChild(lab);
+  const lab=el('label','lb',data.idLabel||'ไอดีผู้เล่น (Player ID)');lab.htmlFor='p_id';ac.appendChild(lab);
   const idIn=document.createElement('input');idIn.id='p_id';idIn.className='fi';idIn.maxLength=40;idIn.autocomplete='off';ac.appendChild(idIn);
   let sel=null;const btns=[];
   const bt=el('div','bt','ยังไม่ได้เลือกแพ็กเกจ');
