@@ -233,7 +233,6 @@ input:focus-visible,button:focus-visible{outline:2px solid #c78bff;outline-offse
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,doc,setDoc,serverTimestamp,onSnapshot,collection,addDoc,query,where} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import {getFunctions,httpsCallable} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-functions.js";
 import {PACKS,findPack} from "./packs.js";
 const app=initializeApp({
   apiKey:"AIzaSyBn5DB363vlF__1KjhPEgEqGgONiaXZq10",
@@ -244,7 +243,14 @@ const app=initializeApp({
   appId:"1:854045350869:web:fba9a2ac3ce83bb7797b5c"
 });
 const auth=getAuth(app),db=getFirestore(app);
-const placeOrderFn=httpsCallable(getFunctions(app,'asia-southeast1'),'placeOrder');
+const TOPUP_URL='https://galaxy-topup.com705788.workers.dev/placeOrder';
+async function placeOrderFn(data){
+  const t=await auth.currentUser.getIdToken();
+  const r=await fetch(TOPUP_URL,{method:'POST',headers:{'Authorization':'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(data)});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(j.error||'internal');e.code='functions/'+(j.code||'internal');throw e}
+  return j;
+}
 let autoMode=false;
 const DOMAIN='@galaxyshop.local';
 const $=id=>document.getElementById(id);
