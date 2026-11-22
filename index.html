@@ -343,7 +343,7 @@ function showPacks(g){
     if(curBal<sel.price){msg.textContent='ยอดเงินไม่พอ (มี '+fmt(curBal)+' กีบ) กรุณาเติมเครดิตก่อน';return}
     go.disabled=true;
     try{
-      if(autoMode){
+      if(autoMode&&sel.auto){
         await placeOrderFn({game:g.id,packId:sel.id,playerId:pid});
         msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ระบบกำลังเติมเกมให้อัตโนมัติ ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
       }else{
