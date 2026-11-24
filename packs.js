@@ -71,12 +71,34 @@ export const PACKS = {
       ]}
     ]
   },
-  ids: {
+  dungeon: {
     idLabel: "ช่องทางติดต่อ (เบอร์ WhatsApp หรือ TikTok)",
-    intro: "เลือกไอดีที่ต้องการ แล้วกดสั่งซื้อ ทางร้านจะติดต่อกลับเพื่อส่งไอดีให้ ห้ามกรอกรหัสผ่านเกม",
-    empty: "ตอนนี้ยังไม่มีไอดีขาย กลับมาดูใหม่เร็วๆ นี้",
+    intro: "เลือกบริการที่ต้องการ แล้วกดสั่งซื้อ ทางร้านจะติดต่อกลับ ห้ามกรอกรหัสผ่านเกม",
+    empty: "ตอนนี้ยังไม่มีรายการ กลับมาดูใหม่เร็วๆ นี้",
     groups: [
-      { title: "ไอดีเกมที่ขาย", items: [
+      { title: "บริการ", items: [
+      ]}
+    ]
+  },
+  fruits: {
+    idLabel: "ช่องทางติดต่อ (เบอร์ WhatsApp หรือ TikTok)",
+    intro: "เลือกผลปีศาจที่ต้องการ แล้วกดสั่งซื้อ ทางร้านจะติดต่อกลับเพื่อส่งของให้ ห้ามกรอกรหัสผ่านเกม",
+    introOut: "",
+    groups: [
+      { title: "ผลปีศาจ", items: [
+        // stock: 0 = ยังไม่มีสต๊อก (แสดงเป็นสีเทา กดไม่ได้) | เมื่อมีของ: ใส่ stock: 1, price (กีบ) และแก้ชื่อผล
+        { id: "fruit-01", name: "ผลที่ 1", img: "f01", price: 0, stock: 0 },
+        { id: "fruit-02", name: "ผลที่ 2", img: "f02", price: 0, stock: 0 },
+        { id: "fruit-03", name: "ผลที่ 3", img: "f03", price: 0, stock: 0 },
+        { id: "fruit-04", name: "ผลที่ 4", img: "f04", price: 0, stock: 0 },
+        { id: "fruit-05", name: "ผลที่ 5", img: "f05", price: 0, stock: 0 },
+        { id: "fruit-06", name: "ผลที่ 6", img: "f06", price: 0, stock: 0 },
+        { id: "fruit-07", name: "ผลที่ 7", img: "f07", price: 0, stock: 0 },
+        { id: "fruit-08", name: "ผลที่ 8", img: "f08", price: 0, stock: 0 },
+        { id: "fruit-09", name: "ผลที่ 9", img: "f09", price: 0, stock: 0 },
+        { id: "fruit-10", name: "ผลที่ 10", img: "f10", price: 0, stock: 0 },
+        { id: "fruit-11", name: "ผลที่ 11", img: "f11", price: 0, stock: 0 },
+        { id: "fruit-12", name: "ผลที่ 12", img: "f12", price: 0, stock: 0 }
       ]}
     ]
   }
