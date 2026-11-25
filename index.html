@@ -442,21 +442,23 @@ function showPacks(g){
         await placeOrderFn({game:g.id,packId:sel.id,playerId:pid});
         msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ระบบกำลังเติมเกมให้อัตโนมัติ ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
       }else{
-        const odata={uid:auth.currentUser.uid,username:who,game:g.name,playerId:pid,item:sel.name,packId:sel.id,status:'pending',createdAt:serverTimestamp()};
-        if(g.id==='fruits'){
-          const par=data.groups.flatMap(x=>x.items).find(p=>p.id===sel.id||(p.variants||[]).some(v=>v.id===sel.id));
-          const sref=doc(db,'system','fruitStock'),oref=doc(collection(db,'orders'));
-          await runTransaction(db,async tx=>{
-            const s=await tx.get(sref),cur=s.exists()&&Number.isFinite(s.data()[par.id])?s.data()[par.id]:0;
-            if(cur<=0)throw new Error('ผลนี้หมดแล้ว');
-            tx.update(sref,{[par.id]:cur-1});
-            tx.set(oref,odata);
-          });
-        }else await addDoc(collection(db,'orders'),odata);
+        const odata={uid:auth.currentUser.uid,username:who,game:g.name,playerId:pid,item:sel.name,packId:sel.id,price:sel.price,status:'pending',createdAt:serverTimestamp()};
+        const par=g.id==='fruits'?data.groups.flatMap(x=>x.items).find(p=>p.id===sel.id||(p.variants||[]).some(v=>v.id===sel.id)):null;
+        const uref=doc(db,'users',auth.currentUser.uid),sref=doc(db,'system','fruitStock'),oref=doc(collection(db,'orders'));
+        await runTransaction(db,async tx=>{
+          const us=await tx.get(uref),bal=us.exists()&&Number.isFinite(us.data().balance)?us.data().balance:0;
+          let cur=0;
+          if(par){const ss=await tx.get(sref);cur=ss.exists()&&Number.isFinite(ss.data()[par.id])?ss.data()[par.id]:0}
+          if(bal<sel.price)throw new Error('ยอดเงินไม่พอ กรุณาเติมเครดิตก่อน');
+          if(par&&cur<=0)throw new Error('ผลนี้หมดแล้ว');
+          tx.update(uref,{balance:bal-sel.price});
+          if(par)tx.update(sref,{[par.id]:cur-1});
+          tx.set(oref,odata);
+        });
         msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
         if(g.id==='fruits')showOrderToast(sel);
       }
-    }catch(e){msg.textContent=(e&&e.message==='ผลนี้หมดแล้ว')?e.message:(e&&String(e.code||'').indexOf('functions/')===0&&e.message&&e.message!=='internal')?e.message:errText(e)}
+    }catch(e){msg.textContent=(e&&(e.message==='ผลนี้หมดแล้ว'||e.message.indexOf('ยอดเงินไม่พอ')===0))?e.message:(e&&String(e.code||'').indexOf('functions/')===0&&e.message&&e.message!=='internal')?e.message:errText(e)}
     go.disabled=false;
   };
 }
