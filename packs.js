@@ -88,23 +88,23 @@ export const PACKS = {
     groups: [
       { title: "ผลปีศาจ", items: [
         // stock: 0 = ไม่มีสต๊อก (แสดงเป็นสีเทา กดไม่ได้) | stock: 1 = มีของ
-        { id: "fruit-dragon", name: "Dragon", img: "f01", th: "มังกร", rare: "ผลในตำนาน (Mythical)", desc: "ผลมังกรสายเพลิงสีเขียว พลังรุนแรง เลือกได้ทั้งมังกรจีนและมังกรญี่ปุ่น", price: 500000, stock: 1, tag: "พิเศษ", variants: [
+        { id: "fruit-dragon", name: "Dragon", img: "f01", price: 500000, stock: 1, tag: "พิเศษ", variants: [
           { id: "fruit-dragon-cn", name: "Dragon (มังกรจีน)", price: 500000 },
           { id: "fruit-dragon-jp", name: "Dragon (มังกรญี่ปุ่น)", price: 500000 }
         ] },
-        { id: "fruit-pamigil", name: "PAMIGIL", img: "f02", th: "ผลปามิกิล", rare: "ผลพิเศษ (Uncommon)", desc: "พลังเย็นเฉียบล้อมรอบด้วยหมอกสีฟ้า", price: 20000, stock: 1 },
-        { id: "fruit-kitsune", name: "Kitsune", img: "f03", th: "ผลจิ้งจอก", rare: "ผลระดับตำนาน (Legendary)", desc: "พลังเปลวไฟสีน้ำเงินของจิ้งจอกวิญญาณ", price: 65000, stock: 1 },
-        { id: "fruit-magnet", name: "Magnet", img: "f04", th: "ผลแม่เหล็ก", rare: "ผลหายาก (Rare)", desc: "สามารถดึงดูดวัตถุรอบตัวได้ และเพิ่มพลังแม่เหล็กสุดแกร่ง!", price: 50000, stock: 1 },
-        { id: "fruit-tiger", name: "Tiger", img: "f05", th: "ผลเสือ", rare: "ผลพิเศษ (Uncommon)", desc: "พลังเสือเพลิง ว่องไวและดุดัน", price: 25000, stock: 1 },
-        { id: "fruit-yeti", name: "Yeti", img: "f06", th: "ผลเยติ", rare: "ผลพิเศษ (Uncommon)", desc: "พลังเยติขนขาวฟูแห่งหิมะ แข็งแกร่งและทนทาน", price: 20000, stock: 1 },
-        { id: "fruit-spirit", name: "Spirit", img: "f07", th: "ผลวิญญาณ", rare: "ผลพิเศษ (Uncommon)", desc: "พลังวิญญาณสองด้าน ทั้งความเย็นและความมืด", price: 20000, stock: 1 },
-        { id: "fruit-gas", name: "Gas", img: "f08", th: "ผลแก๊ส", rare: "ผลทั่วไป (Common)", desc: "พลังเปลวไฟสีฟ้าและกลุ่มควันม่วง", price: 15000, stock: 1 },
-        { id: "fruit-kamandag", name: "Kamandag", img: "f09", th: "ผลพิษ", rare: "ผลพิเศษ (Uncommon)", desc: "พลังพิษและหนามแหลม ร้ายกาจ", price: 20000, stock: 1 },
-        { id: "fruit-lilim", name: "Lilim", img: "f10", th: "ผลเงา", rare: "ผลทั่วไป (Common)", desc: "พลังเงามืดล้อมรอบด้วยเปลวไฟสีม่วง", price: 15000, stock: 1 },
-        { id: "fruit-tinapay", name: "Tinapay", img: "f11", th: "ผลขนมปัง", rare: "ผลทั่วไป (Common)", desc: "พลังแป้งเหนียวนุ่ม แปลกและน่ารัก", price: 15000, stock: 1 },
-        { id: "fruit-mimmoth", name: "Mammoth", img: "f12", th: "ผลแมมมอธ", rare: "ผลทั่วไป (Common)", desc: "พลังแมมมอธงาใหญ่ ร่างกายทรงพลัง", price: 15000, stock: 1 },
-        { id: "fruit-trex", name: "T-Rex", img: "f13", th: "ผลทีเร็กซ์", rare: "ผลทั่วไป (Common)", desc: "พลังไดโนเสาร์ราชาแห่งนักล่า", price: 15000, stock: 1 },
-        { id: "fruit-gravidad", name: "Gravedad", img: "f14", th: "ผลแรงโน้มถ่วง", rare: "ผลทั่วไป (Common)", desc: "ควบคุมแรงโน้มถ่วงแห่งดวงดาว", price: 15000, stock: 1 }
+        { id: "fruit-pamigil", name: "PAMIGIL", img: "f02", price: 20000, stock: 1 },
+        { id: "fruit-kitsune", name: "Kitsune", img: "f03", price: 65000, stock: 1 },
+        { id: "fruit-magnet", name: "Magnet", img: "f04", price: 50000, stock: 1 },
+        { id: "fruit-tiger", name: "Tiger", img: "f05", price: 25000, stock: 1 },
+        { id: "fruit-yeti", name: "Yeti", img: "f06", price: 20000, stock: 1 },
+        { id: "fruit-spirit", name: "Spirit", img: "f07", price: 20000, stock: 1 },
+        { id: "fruit-gas", name: "Gas", img: "f08", price: 15000, stock: 1 },
+        { id: "fruit-kamandag", name: "Kamandag", img: "f09", price: 20000, stock: 1 },
+        { id: "fruit-lilim", name: "Lilim", img: "f10", price: 15000, stock: 1 },
+        { id: "fruit-tinapay", name: "Tinapay", img: "f11", price: 15000, stock: 1 },
+        { id: "fruit-mimmoth", name: "Mammoth", img: "f12", price: 15000, stock: 1 },
+        { id: "fruit-trex", name: "T-Rex", img: "f13", price: 15000, stock: 1 },
+        { id: "fruit-gravidad", name: "Gravedad", img: "f14", price: 15000, stock: 1 }
       ]}
     ]
   }
