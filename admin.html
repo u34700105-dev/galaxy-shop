@@ -94,6 +94,7 @@ body.homebg{background:#0a0420}
   <button id="fab" type="button" aria-label="เมนูแอดมิน" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="#3a1b7a" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
   <div id="menu" hidden>
     <button type="button" data-v="slips">🧾 ตรวจสลิป</button>
+    <button type="button" data-v="reg">➕ สมัครสมาชิกให้ลูกค้า</button>
     <button type="button" data-v="out">ออกจากระบบ</button>
   </div>
   <div id="lb" hidden><img alt="สลิป"></div>
@@ -102,17 +103,17 @@ body.homebg{background:#0a0420}
 
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import {getAuth,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,getDoc,updateDoc,addDoc,deleteDoc,collection,query,where,onSnapshot,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-import {PACKS,findPack} from "./packs.js";
-const app=initializeApp({
+import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {getFirestore,setDoc,doc,getDoc,updateDoc,addDoc,deleteDoc,collection,query,where,onSnapshot,runTransaction,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const CFG={
   apiKey:"AIzaSyBn5DB363vlF__1KjhPEgEqGgONiaXZq10",
   authDomain:"galaxy-shop-8cb4b.firebaseapp.com",
   projectId:"galaxy-shop-8cb4b",
   storageBucket:"galaxy-shop-8cb4b.firebasestorage.app",
   messagingSenderId:"854045350869",
   appId:"1:854045350869:web:fba9a2ac3ce83bb7797b5c"
-});
+};
+const app=initializeApp(CFG);
 const auth=getAuth(app),db=getFirestore(app);
 const DOMAIN='@galaxyshop.local';
 const $=id=>document.getElementById(id);
@@ -151,171 +152,50 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();$('lb')
 $('lb').onclick=()=>$('lb').hidden=true;
 function go(v){
   stop();
-  if(v==='orders')viewOrders();else if(v==='slips')viewSlips();else if(v==='users')viewUsers();
-  else if(v==='products')viewProducts();else if(v==='addstock')viewAddStock();else if(v==='home')viewHome();else signOut(auth);
+  if(v==='slips')viewSlips();else if(v==='reg')viewReg();else signOut(auth);
 }
 $('menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;closeMenu();go(b.dataset.v)};
 function setView(title){
   const v=$('view');v.replaceChildren();$('fab').hidden=false;$('home').hidden=true;$('wrap').hidden=false;document.body.classList.remove('homebg');
-  const bk=el('button','btn alt','‹ กลับ');bk.style.cssText='height:36px;margin-bottom:8px';bk.onclick=()=>go('home');
-  v.appendChild(bk);v.appendChild(el('h2','',title));
+  v.appendChild(el('h2','',title));
   const box=el('div');v.appendChild(box);return box;
 }
-function viewHome(){
-  stop();closeMenu();$('fab').hidden=false;$('home').hidden=true;$('wrap').hidden=false;document.body.classList.remove('homebg');
-  $('view').replaceChildren(el('p','mut','กดวงกลมสีขาวทางซ้ายเพื่อเปิดเมนู'));
-}
-const CATS=[['v4','เผ่า V4 เทียร์ 10'],['normal','ID ปกติ'],['awaken','ผลตื่น'],['mystery','ไอดีจุ่ม']];
-let curCat='v4',addCat='v4';
-const catLabel=k=>(CATS.find(c=>c[0]===k)||['',k])[1];
-/* รายการสินค้า ID */
-function viewProducts(){
-  const box=setView('รายการสินค้า ID · Blox Fruits');
-  const list=el('div'),bar=el('div','catbar');
-  box.appendChild(list);box.appendChild(bar);
-  const drawBar=()=>{bar.replaceChildren();CATS.forEach(c=>{const b=el('button','',c[1]);b.type='button';b.setAttribute('aria-pressed',String(c[0]===curCat));b.onclick=()=>{curCat=c[0];drawBar();load()};bar.appendChild(b)})};
-  const load=()=>{
-    stop();list.replaceChildren(el('p','mut','กำลังโหลด...'));
-    unsub=onSnapshot(query(collection(db,'stock'),where('cat','==',curCat)),snap=>{
-      const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>secs(y)-secs(x));
-      list.replaceChildren();
-      list.appendChild(el('p','mut cnt','หมวด '+catLabel(curCat)+' · '+rows.length+' ไอดี (พร้อมขาย '+rows.filter(r=>r.status==='available').length+')'));
-      if(!rows.length){list.appendChild(el('p','mut','ยังว่างอยู่'));return}
-      rows.forEach(r=>{
-        const c=el('div','card');
-        c.appendChild(el('b','',r.username));
-        const pr=el('div','','รหัสผ่าน: ');const pv=el('span','','••••••••');pr.appendChild(pv);
-        const sh=el('button','btn alt','แสดง');sh.style.cssText='height:28px;margin-left:8px;padding:0 10px;font-size:13px';
-        let shown=false;sh.onclick=()=>{shown=!shown;pv.textContent=shown?r.password:'••••••••';sh.textContent=shown?'ซ่อน':'แสดง'};
-        pr.appendChild(sh);c.appendChild(pr);
-        c.appendChild(el('div','ok',fmt(r.price)+' กีบ'));
-        if(r.note)c.appendChild(el('div','mut',r.note));
-        c.appendChild(el('div',r.status==='available'?'ok':'mut',r.status==='available'?'พร้อมขาย':'ขายแล้ว'));
-        const row=el('div','row');
-        const tg=el('button','btn alt',r.status==='available'?'ทำเครื่องหมายขายแล้ว':'ตั้งเป็นพร้อมขาย');
-        tg.onclick=async()=>{tg.disabled=true;try{await updateDoc(doc(db,'stock',r.id),{status:r.status==='available'?'sold':'available'})}catch(e){toast(emsg(e));tg.disabled=false}};
-        const del=el('button','btn no','ลบ');
-        del.onclick=async()=>{if(!confirm('ลบไอดีนี้ออกจากสต๊อก?'))return;del.disabled=true;try{await deleteDoc(doc(db,'stock',r.id))}catch(e){toast(emsg(e));del.disabled=false}};
-        row.appendChild(tg);row.appendChild(del);c.appendChild(row);list.appendChild(c);
-      });
-    },e=>toast('โหลดสต๊อกไม่สำเร็จ: '+(e.code||'')));
-  };
-  drawBar();load();
-}
-/* เติมสต๊อก */
-function viewAddStock(){
-  const box=setView('เติมสต๊อก · Blox Fruits');
-  const form=el('div','card');
-  form.appendChild(el('b','','เลือกหมวดหมู่'));
-  const chips=el('div','chips');form.appendChild(chips);
-  const drawChips=()=>{chips.replaceChildren();CATS.forEach(c=>{const b=el('button','',c[1]);b.type='button';b.setAttribute('aria-pressed',String(c[0]===addCat));b.onclick=()=>{addCat=c[0];drawChips()};chips.appendChild(b)})};
-  drawChips();
-  const mk=(ph)=>{const i=document.createElement('input');i.placeholder=ph;i.setAttribute('aria-label',ph);i.autocomplete='off';i.setAttribute('autocapitalize','off');i.style.marginTop='8px';return i};
-  const uIn=mk('ชื่อผู้ใช้ไอดี'),pIn=mk('รหัสผ่านไอดี'),prIn=mk('ราคา (กีบ)'),nIn=mk('หมายเหตุ (ไม่บังคับ)');prIn.inputMode='numeric';
-  const add=el('button','btn','เพิ่มสต๊อก');add.style.cssText='width:100%;margin-top:12px';
-  [uIn,pIn,prIn,nIn,add].forEach(x=>form.appendChild(x));
-  const msg=el('p','ok');msg.setAttribute('role','status');form.appendChild(msg);
-  box.appendChild(form);
-  add.onclick=async()=>{
-    const u=uIn.value.trim(),pw=pIn.value.trim(),pr=parseAmt(prIn.value);
-    msg.textContent='';
-    if(!u||!pw){toast('กรอกชื่อผู้ใช้และรหัสผ่านของไอดี');return}
-    if(!pr){toast('กรอกราคาเป็นตัวเลข');return}
-    add.disabled=true;
-    try{
-      await addDoc(collection(db,'stock'),{game:'blox-fruits',cat:addCat,username:u,password:pw,price:pr,note:nIn.value.trim().slice(0,200),status:'available',createdAt:serverTimestamp()});
-      uIn.value=pIn.value=prIn.value=nIn.value='';msg.textContent='เพิ่มแล้ว ✓ หมวด '+catLabel(addCat);
-    }catch(e){toast(emsg(e))}
-    add.disabled=false;
-  };
-}
+function viewHome(){viewSlips()}
 function parseAmt(s){const n=parseInt(String(s).replace(/[^0-9]/g,''),10);return Number.isFinite(n)&&n>0&&n<1000000000?n:0}
 
-/* 1) รายการสั่งซื้อ */
-function viewOrders(){
-  const box0=setView('ออเดอร์');
-  const rbox=el('div'),box=el('div');box0.appendChild(rbox);box0.appendChild(box);
-  const u1=onSnapshot(query(collection(db,'orders'),where('status','==','review')),snap=>{
-    rbox.replaceChildren();
-    snap.docs.forEach(d=>{
-      const o={id:d.id,...d.data()};
-      const c=el('div','card');c.style.borderColor='#ff7b9c';
-      c.appendChild(el('b','err','⚠ ต้องตรวจสอบ: '+o.game));
-      c.appendChild(el('div','','ลูกค้า: '+o.username));
-      c.appendChild(el('div','','ไอดีผู้เล่น: '+o.playerId));
-      c.appendChild(el('div','',o.item+' · '+fmt(o.price)+' กีบ'));
-      c.appendChild(el('div','mut','รหัสอ้างอิงที่ 24TERM: '+o.id));
-      if(o.reviewReason)c.appendChild(el('div','mut',o.reviewReason));
-      const r=el('div','row');
-      const ok=el('button','btn','เติมสำเร็จแล้ว ✓'),rf=el('button','btn no','คืนเงินลูกค้า');
-      ok.onclick=async()=>{
-        if(!confirm('ยืนยันว่าเติมสำเร็จแล้ว?'))return;
-        ok.disabled=rf.disabled=true;
-        try{await updateDoc(doc(db,'orders',o.id),{status:'done',doneAt:serverTimestamp()})}catch(e){toast(emsg(e));ok.disabled=rf.disabled=false}
-      };
-      rf.onclick=async()=>{
-        if(!confirm('คืนเงิน '+fmt(o.price)+' กีบ ให้ '+o.username+' ?'))return;
-        ok.disabled=rf.disabled=true;
-        try{
-          await runTransaction(db,async tx=>{
-            const or=doc(db,'orders',o.id),os=await tx.get(or);
-            if(!os.exists()||os.data().status!=='review')throw new Error('ออเดอร์นี้ถูกจัดการไปแล้ว');
-            const ur=doc(db,'users',o.uid),us=await tx.get(ur);
-            if(!us.exists())throw new Error('ไม่พบบัญชีลูกค้า');
-            tx.update(ur,{balance:(us.data().balance||0)+o.price});
-            tx.update(or,{status:'failed',refunded:true,failureReason:'ทางร้านคืนเงินให้แล้ว',doneAt:serverTimestamp()});
-          });
-        }catch(e){toast(emsg(e));ok.disabled=rf.disabled=false}
-      };
-      r.appendChild(ok);r.appendChild(rf);c.appendChild(r);rbox.appendChild(c);
-    });
-  },e=>toast('โหลดออเดอร์ไม่สำเร็จ: '+(e.code||'')));
-  const u2=onSnapshot(query(collection(db,'orders'),where('status','==','pending')),snap=>{
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>secs(a)-secs(b));
-    box.replaceChildren();
-    if(!rows.length){box.appendChild(el('p','mut','ยังไม่มีออเดอร์ที่รอเติม'));return}
-    box.appendChild(el('p','mut cnt','รอเติม '+rows.length+' รายการ (เก่าสุดอยู่บน)'));
-    rows.forEach(o=>{
-      const c=el('div','card');
-      c.appendChild(el('b','',o.game));
-      c.appendChild(el('div','','ลูกค้า: '+o.username));
-      const idr=el('div','','ไอดีผู้เล่น: ');const idb=el('b','',o.playerId);idr.appendChild(idb);
-      const cp=el('button','btn alt','คัดลอก');cp.style.cssText='height:30px;margin-left:8px;padding:0 10px;font-size:13px';
-      cp.onclick=async()=>{try{await navigator.clipboard.writeText(o.playerId);cp.textContent='คัดลอกแล้ว'}catch(e){toast('คัดลอกไม่ได้')}};
-      idr.appendChild(cp);c.appendChild(idr);
-      const pk=o.packId?findPack(o.packId):null,price=pk?pk.price:0;
-      c.appendChild(el('div','','รายการ: '+o.item));
-      if(price)c.appendChild(el('div','ok','ราคา: '+fmt(price)+' กีบ (หักจากยอดลูกค้าตอนกดเติมเกมแล้ว)'));
-      c.appendChild(el('div','mut',when(o.createdAt)));
-      const ch=document.createElement('input');ch.inputMode='numeric';ch.placeholder='หักยอดลูกค้า (กีบ) ไม่บังคับ';ch.style.marginTop='8px';ch.setAttribute('aria-label','หักยอดลูกค้า');
-      if(price)ch.value=String(price);c.appendChild(ch);
-      const r=el('div','row');
-      const ok=el('button','btn','เติมเกมแล้ว ✓'),no=el('button','btn no','ยกเลิก');
-      ok.onclick=async()=>{
-        const charge=ch.value.trim()?parseAmt(ch.value):0;
-        if(ch.value.trim()&&!charge){toast('จำนวนเงินที่หักไม่ถูกต้อง');return}
-        ok.disabled=no.disabled=true;
-        try{
-          await runTransaction(db,async tx=>{
-            const or=doc(db,'orders',o.id),os=await tx.get(or);
-            if(!os.exists()||os.data().status!=='pending')throw new Error('ออเดอร์นี้ถูกจัดการไปแล้ว');
-            let ur=null,bal=0;
-            if(charge>0){ur=doc(db,'users',o.uid);const us=await tx.get(ur);if(!us.exists())throw new Error('ไม่พบบัญชีลูกค้า');bal=us.data().balance||0;if(bal<charge)throw new Error('ยอดเงินลูกค้าไม่พอ (มี '+fmt(bal)+' กีบ)')}
-            if(ur)tx.update(ur,{balance:bal-charge});
-            tx.update(or,{status:'done',charged:charge,doneAt:serverTimestamp()});
-          });
-        }catch(e){toast(emsg(e));ok.disabled=no.disabled=false}
-      };
-      no.onclick=async()=>{
-        if(!confirm('ยกเลิกออเดอร์นี้?'))return;
-        ok.disabled=no.disabled=true;
-        try{await updateDoc(doc(db,'orders',o.id),{status:'cancelled',doneAt:serverTimestamp()})}catch(e){toast(emsg(e));ok.disabled=no.disabled=false}
-      };
-      r.appendChild(ok);r.appendChild(no);c.appendChild(r);box.appendChild(c);
-    });
-  },e=>toast('โหลดออเดอร์ไม่สำเร็จ: '+(e.code||'')));
-  unsub=()=>{u1();u2()};
+/* สมัครสมาชิกให้ลูกค้า (ใช้แอปรองเพื่อไม่ให้แอดมินหลุดออกจากระบบ) */
+function viewReg(){
+  const box=setView('สมัครสมาชิกให้ลูกค้า');
+  const form=el('div','card');
+  const mk=(ph,type,ac)=>{const i=document.createElement('input');i.type=type;i.placeholder=ph;i.setAttribute('aria-label',ph);i.autocomplete=ac;i.setAttribute('autocapitalize','off');i.style.marginTop='8px';return i};
+  const nIn=mk('ชื่อผู้ใช้ (a-z และตัวเลข 3–20 ตัว)','text','off'),eIn=mk('อีเมล','email','off'),pIn=mk('รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)','text','off');
+  const go2=el('button','btn','สมัครสมาชิก');go2.type='button';go2.style.cssText='width:100%;margin-top:12px';
+  const msg=el('p','ok');msg.setAttribute('role','status');
+  [nIn,eIn,pIn,go2,msg].forEach(x=>form.appendChild(x));box.appendChild(form);
+  go2.onclick=async()=>{
+    const u=nIn.value.trim().toLowerCase(),mail=eIn.value.trim(),pw=pIn.value;
+    msg.textContent='';msg.className='ok';
+    if(!/^[a-z0-9]{3,20}$/.test(u)){toast('ชื่อผู้ใช้ใช้ a-z และตัวเลข 3–20 ตัว');return}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)){toast('รูปแบบอีเมลไม่ถูกต้อง');return}
+    if(pw.length<6){toast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');return}
+    go2.disabled=true;
+    let app2=null;
+    try{
+      app2=initializeApp(CFG,'reg'+Date.now());
+      const a2=getAuth(app2),d2=getFirestore(app2);
+      const cred=await createUserWithEmailAndPassword(a2,u+DOMAIN,pw);
+      await setDoc(doc(d2,'users',cred.user.uid),{username:u,email:mail,balance:0,createdAt:serverTimestamp()});
+      await signOut(a2);
+      msg.textContent='สมัครให้แล้ว ✓ ชื่อผู้ใช้: '+u;
+      nIn.value=eIn.value=pIn.value='';
+    }catch(e){
+      msg.className='err';
+      msg.textContent=(e&&e.code==='auth/email-already-in-use')?'ชื่อผู้ใช้นี้ถูกใช้แล้ว':(e&&e.code==='auth/weak-password')?'รหัสผ่านง่ายเกินไป':'สมัครไม่สำเร็จ ลองใหม่อีกครั้ง ('+((e&&e.code)||'')+')';
+    }
+    go2.disabled=false;
+  };
 }
+
 /* 2) ตรวจสลิปและเติมเงิน */
 function viewSlips(){
   const box=setView('สลิปที่รอตรวจสอบ');
@@ -361,30 +241,6 @@ function viewSlips(){
   },e=>toast('โหลดสลิปไม่สำเร็จ: '+(e.code||'')));
 }
 
-/* 3) บัญชีผู้ใช้งาน */
-function viewUsers(){
-  const box=setView('ผู้ใช้งานในปัจจุบัน');
-  const big=el('div','card bigc');const bn=el('div','bign','0');
-  big.appendChild(el('div','mut','ผู้ใช้งานทั้งหมด'));big.appendChild(bn);big.appendChild(el('div','mut','คน'));
-  const q=document.createElement('input');q.placeholder='ค้นหาชื่อผู้ใช้หรืออีเมล';q.setAttribute('aria-label','ค้นหา');q.style.marginBottom='10px';
-  const cnt=el('p','mut cnt');const list=el('div');
-  box.appendChild(big);box.appendChild(q);box.appendChild(cnt);box.appendChild(list);
-  let rows=[];
-  const draw=()=>{
-    const k=q.value.trim().toLowerCase();
-    const f=rows.filter(u=>!k||String(u.username).toLowerCase().includes(k)||String(u.email).toLowerCase().includes(k));
-    cnt.textContent='ทั้งหมด '+rows.length+' บัญชี'+(k?' · พบ '+f.length:'');
-    list.replaceChildren();
-    f.forEach(u=>{const c=el('div','card');c.appendChild(el('b','',u.username));
-      c.appendChild(el('div','','อีเมล: '+u.email));
-      c.appendChild(el('div','ok','ยอดเงิน: '+fmt(u.balance)+' กีบ'));
-      c.appendChild(el('div','mut','สมัครเมื่อ '+when(u.createdAt)));list.appendChild(c)});
-  };
-  q.oninput=draw;
-  unsub=onSnapshot(collection(db,'users'),snap=>{
-    rows=snap.docs.map(d=>d.data()).sort((a,b)=>secs(b)-secs(a));bn.textContent=fmt(rows.length);draw();
-  },e=>toast('โหลดบัญชีไม่สำเร็จ: '+(e.code||'')));
-}
 </script>
 </body>
 </html>
