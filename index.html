@@ -359,6 +359,7 @@ function showPacks(g){
   const ac=$('ac'),data=PACKS[g.id];ac.textContent='';
   ac.appendChild(el('h2','gh',g.name));
   const isOut=p=>p.stock===0||!p.price;
+  const noId=g.id==='fruits';
   const noneAvail=data.groups.some(gr=>gr.items.length)&&data.groups.every(gr=>gr.items.every(isOut));
   const introTxt=noneAvail?(data.introOut||''):(data.intro||'กรอกไอดีผู้เล่น เลือกแพ็กเกจ แล้วกดสั่งซื้อ ห้ามกรอกรหัสผ่านเกม');
   if(introTxt)ac.appendChild(el('p','gs',introTxt));
@@ -367,8 +368,8 @@ function showPacks(g){
     const bk=el('button','back','กลับไปเลือกเกม');bk.type='button';bk.onclick=()=>g.sub?showIdMenu():tab('home');ac.appendChild(bk);return;
   }
   if(data.warn){const w=el('p','',data.warn);w.setAttribute('role','note');w.style.cssText='margin:8px 0;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,170,0,.55);background:rgba(255,170,0,.14);font-size:.92em;line-height:1.5;white-space:pre-line';ac.appendChild(w)}
-  const lab=el('label','lb',data.idLabel||'ไอดีผู้เล่น (Player ID)');lab.htmlFor='p_id';if(!noneAvail)ac.appendChild(lab);
-  const idIn=document.createElement('input');idIn.id='p_id';idIn.className='fi';idIn.maxLength=40;idIn.autocomplete='off';if(data.digits)idIn.inputMode='numeric';if(!noneAvail)ac.appendChild(idIn);
+  const lab=el('label','lb',data.idLabel||'ไอดีผู้เล่น (Player ID)');lab.htmlFor='p_id';if(!noneAvail&&!noId)ac.appendChild(lab);
+  const idIn=document.createElement('input');idIn.id='p_id';idIn.className='fi';idIn.maxLength=40;idIn.autocomplete='off';if(data.digits)idIn.inputMode='numeric';if(!noneAvail&&!noId)ac.appendChild(idIn);
   let sel=null;const btns=[];
   const bt=el('div','bt','ยังไม่ได้เลือกแพ็กเกจ');
   const vpanel=el('div','');vpanel.hidden=true;
@@ -426,7 +427,7 @@ function showPacks(g){
   bar.appendChild(bt);bar.appendChild(go);bar.appendChild(msg);if(!noneAvail)ac.appendChild(bar);
   go.onclick=async()=>{
     msg.textContent='';msg.className='msg err';
-    const pid=idIn.value.trim();
+    const pid=noId?'ทักแชท':idIn.value.trim();
     if(!pid){msg.textContent='กรุณากรอกไอดีผู้เล่น';idIn.focus();return}
     if(data.digits&&!/^[0-9]{5,20}$/.test(pid)){msg.textContent='UID ต้องเป็นตัวเลขเท่านั้น';idIn.focus();return}
     if(!sel){msg.textContent='กรุณาเลือกแพ็กเกจ';return}
