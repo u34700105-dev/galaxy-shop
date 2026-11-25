@@ -576,6 +576,22 @@ $('rgo').onclick=async()=>{
   }catch(e){rm.className='msg err';rm.textContent=errText(e)}
   b.disabled=false;
 };
+
+/* รีเซ็ตระบบ: เมื่อแอดมินกดรีเซ็ต หน้านี้จะล้างแคชแล้วโหลดใหม่ (ล็อกอินค้างอยู่เหมือนเดิม) */
+(function(){
+  let first=true,last=null;
+  try{
+    onSnapshot(doc(db,'system','reset'),async snap=>{
+      const t=snap.exists()&&snap.data().at?snap.data().at.seconds:0;
+      if(first){first=false;last=t;return}
+      if(!t||t===last)return;
+      last=t;
+      try{if('caches' in window){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}}catch(e){}
+      try{if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}}catch(e){}
+      location.reload();
+    },()=>{});
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
