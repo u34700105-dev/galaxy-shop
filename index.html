@@ -232,7 +232,7 @@ input:focus-visible,button:focus-visible{outline:2px solid #c78bff;outline-offse
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,setDoc,serverTimestamp,onSnapshot,collection,addDoc,query,where} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,setDoc,serverTimestamp,onSnapshot,collection,addDoc,query,where,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {PACKS,findPack} from "./packs.js";
 const app=initializeApp({
   apiKey:"AIzaSyBn5DB363vlF__1KjhPEgEqGgONiaXZq10",
@@ -355,10 +355,13 @@ function showOrderToast(item){
   const ok=el('button','ot-ok','OK');ok.type='button';ok.onclick=close;box.appendChild(ok);
   document.body.appendChild(ov);
 }
+let fruitStock={},curPack=null;
+const stockOf=p=>Number.isFinite(fruitStock[p.id])?fruitStock[p.id]:(p.stock||0);
 function showPacks(g){
+  curPack=g;
   const ac=$('ac'),data=PACKS[g.id];ac.textContent='';
   ac.appendChild(el('h2','gh',g.name));
-  const isOut=p=>p.stock===0||!p.price;
+  const isOut=p=>(g.id==='fruits'?stockOf(p)<=0:p.stock===0)||!p.price;
   const noId=g.id==='fruits';
   const noneAvail=data.groups.some(gr=>gr.items.length)&&data.groups.every(gr=>gr.items.every(isOut));
   const introTxt=noneAvail?(data.introOut||''):(data.intro||'กรอกไอดีผู้เล่น เลือกแพ็กเกจ แล้วกดสั่งซื้อ ห้ามกรอกรหัสผ่านเกม');
@@ -384,9 +387,10 @@ function showPacks(g){
         b.setAttribute('aria-label',p.name+(out?' (ยังไม่มีสต๊อก)':''));
         b.style.cssText='padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.2';
         const im=document.createElement('img');im.src=FRUIT_IMGS[p.img]||p.img;im.alt='';im.style.cssText='width:100%;height:auto;display:block;border-radius:10px';b.appendChild(im);
-        if(out){b.disabled=true;b.style.filter='grayscale(1)';b.style.opacity='.5';b.style.cursor='not-allowed'}
+        if(out){b.disabled=true;b.style.filter='grayscale(1)';b.style.opacity='.5';b.style.cursor='not-allowed';
+          b.appendChild(el('span','pn',p.name));b.appendChild(el('span','pp','Order: 0'))}
         else{
-          b.appendChild(el('span','pn',p.name));b.appendChild(el('span','pp',fmt(p.price)+' กีบ'));
+          b.appendChild(el('span','pn',p.name));b.appendChild(el('span','pp',fmt(p.price)+' กีบ'));b.appendChild(el('span','pp','Order: '+fmt(stockOf(p))));
           if(p.tag)b.appendChild(el('span','pp',p.tag));
           b.onclick=()=>{
             btns.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
@@ -438,11 +442,21 @@ function showPacks(g){
         await placeOrderFn({game:g.id,packId:sel.id,playerId:pid});
         msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ระบบกำลังเติมเกมให้อัตโนมัติ ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
       }else{
-        await addDoc(collection(db,'orders'),{uid:auth.currentUser.uid,username:who,game:g.name,playerId:pid,item:sel.name,packId:sel.id,status:'pending',createdAt:serverTimestamp()});
+        const odata={uid:auth.currentUser.uid,username:who,game:g.name,playerId:pid,item:sel.name,packId:sel.id,status:'pending',createdAt:serverTimestamp()};
+        if(g.id==='fruits'){
+          const par=data.groups.flatMap(x=>x.items).find(p=>p.id===sel.id||(p.variants||[]).some(v=>v.id===sel.id));
+          const sref=doc(db,'system','fruitStock'),oref=doc(collection(db,'orders'));
+          await runTransaction(db,async tx=>{
+            const s=await tx.get(sref),cur=s.exists()&&Number.isFinite(s.data()[par.id])?s.data()[par.id]:0;
+            if(cur<=0)throw new Error('ผลนี้หมดแล้ว');
+            tx.update(sref,{[par.id]:cur-1});
+            tx.set(oref,odata);
+          });
+        }else await addDoc(collection(db,'orders'),odata);
         msg.className='msg';msg.textContent='ส่งออเดอร์แล้ว ดูสถานะที่เมนู "รายการสั่งซื้อล่าสุด"';
         if(g.id==='fruits')showOrderToast(sel);
       }
-    }catch(e){msg.textContent=(e&&String(e.code||'').indexOf('functions/')===0&&e.message&&e.message!=='internal')?e.message:errText(e)}
+    }catch(e){msg.textContent=(e&&e.message==='ผลนี้หมดแล้ว')?e.message:(e&&String(e.code||'').indexOf('functions/')===0&&e.message&&e.message!=='internal')?e.message:errText(e)}
     go.disabled=false;
   };
 }
@@ -581,6 +595,11 @@ $('rgo').onclick=async()=>{
 (function(){
   let first=true,last=null;
   try{
+    onSnapshot(doc(db,'system','fruitStock'),s=>{
+      fruitStock=s.exists()?(s.data()||{}):{};
+      const a=$('ac');
+      if(curPack&&curPack.id==='fruits'&&a&&a.querySelector('.packs')&&(a.querySelector('h2.gh')||{}).textContent===curPack.name)showPacks(curPack);
+    },()=>{});
     onSnapshot(doc(db,'system','reset'),async snap=>{
       const t=snap.exists()&&snap.data().at?snap.data().at.seconds:0;
       if(first){first=false;last=t;return}
