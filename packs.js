@@ -92,19 +92,19 @@ export const PACKS = {
           { id: "fruit-dragon-cn", name: "Dragon (มังกรจีน)", price: 500000 },
           { id: "fruit-dragon-jp", name: "Dragon (มังกรญี่ปุ่น)", price: 500000 }
         ] },
-        { id: "fruit-pamigil", name: "Pamigil", img: "f02", price: 20000, stock: 1 },
+        { id: "fruit-pamigil", name: "PAMIGIL", img: "f02", price: 20000, stock: 1 },
         { id: "fruit-kitsune", name: "Kitsune", img: "f03", price: 65000, stock: 1 },
         { id: "fruit-magnet", name: "Magnet", img: "f04", price: 50000, stock: 1 },
-        { id: "fruit-tiger", name: "Tiger", img: "f05", price: 20000, stock: 1 },
+        { id: "fruit-tiger", name: "Tiger", img: "f05", price: 25000, stock: 1 },
         { id: "fruit-yeti", name: "Yeti", img: "f06", price: 20000, stock: 1 },
         { id: "fruit-spirit", name: "Spirit", img: "f07", price: 20000, stock: 1 },
-        { id: "fruit-gas", name: "Gas", img: "ph", price: 15000, stock: 1 },
-        { id: "fruit-kamandag", name: "Kamandag", img: "ph", price: 20000, stock: 1 },
-        { id: "fruit-lilim", name: "Lilim", img: "f08", price: 15000, stock: 1 },
-        { id: "fruit-tinapay", name: "Tinapay", img: "f09", price: 20000, stock: 1 },
-        { id: "fruit-mimmoth", name: "Mimmoth", img: "f10", price: 15000, stock: 1 },
-        { id: "fruit-trex", name: "T-Rex", img: "f11", price: 15000, stock: 1 },
-        { id: "fruit-gravidad", name: "Gravidad", img: "f12", price: 20000, stock: 1 }
+        { id: "fruit-gas", name: "Gas", img: "f08", price: 15000, stock: 1 },
+        { id: "fruit-kamandag", name: "Kamandag", img: "f09", price: 20000, stock: 1 },
+        { id: "fruit-lilim", name: "Lilim", img: "f10", price: 15000, stock: 1 },
+        { id: "fruit-tinapay", name: "Tinapay", img: "f11", price: 15000, stock: 1 },
+        { id: "fruit-mimmoth", name: "Mammoth", img: "f12", price: 15000, stock: 1 },
+        { id: "fruit-trex", name: "T-Rex", img: "f13", price: 15000, stock: 1 },
+        { id: "fruit-gravidad", name: "Gravedad", img: "f14", price: 15000, stock: 1 }
       ]}
     ]
   }
