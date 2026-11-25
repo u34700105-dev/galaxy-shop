@@ -337,12 +337,12 @@ const SHOP_PHONE='2092018344',SHOP_WA='8562092018344';
 function showFruit(g,p){
   const ac=$('ac'),data=PACKS[g.id];ac.textContent='';
   if(!$('fdcss')){const st=document.createElement('style');st.id='fdcss';st.textContent=
-   '.fd{position:relative;width:min(calc(100vw - 32px),560px);margin:0 auto;aspect-ratio:1024/1536;container-type:inline-size;background:#05021a center/100% 100% no-repeat;border-radius:14px;overflow:hidden;color:#fff}'+
+   '.fd{position:relative;width:min(100vw,680px);margin:0 0 0 calc(50% - min(100vw,680px)/2);aspect-ratio:1024/1536;container-type:inline-size;background:#05021a center/100% 100% no-repeat;overflow:hidden;color:#fff}'+
    '.fd>*{position:absolute;box-sizing:border-box;margin:0}'+
    '.fd-hot{background:none;border:0;padding:0;cursor:pointer;border-radius:16px;-webkit-tap-highlight-color:transparent}'+
    '.fd-hot:active{background:rgba(255,255,255,.12)}.fd-hot:focus-visible{outline:2px solid #fff}'+
    '.fd-img{display:flex;align-items:center;justify-content:center}'+
-   '.fd-img img{width:92%;height:auto;max-height:96%;object-fit:contain;filter:drop-shadow(0 0 3.5cqw rgba(200,120,255,.85));animation:fdf 3.2s ease-in-out infinite}'+
+   '.fd-img img{-webkit-mask-image:radial-gradient(closest-side,#000 82%,transparent 100%);mask-image:radial-gradient(closest-side,#000 82%,transparent 100%);width:92%;height:auto;max-height:96%;object-fit:contain;filter:drop-shadow(0 0 3.5cqw rgba(200,120,255,.85));animation:fdf 3.2s ease-in-out infinite}'+
    '@keyframes fdf{50%{transform:translateY(-1.6cqw)}}'+
    '.fd-t{display:flex;align-items:center;white-space:nowrap;font-weight:800}'+
    '.fd-name{font-size:7.8cqw;line-height:1.25;font-style:italic;background:linear-gradient(180deg,#fff 30%,#c9b0ff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 1.2cqw rgba(170,110,255,.9))}'+
