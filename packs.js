@@ -80,6 +80,47 @@ export const PACKS = {
       ]}
     ]
   },
+  idshop: {
+    intro: "เลือกไอดีที่ต้องการ แล้วกดสั่งซื้อ จากนั้นทักแชทร้านตามเบอร์ที่ขึ้น ห้ามกรอกรหัสผ่านเกม",
+    warn: "⚠️ กรุณาตรวจสอบในเกมว่าถึงเลเวล 700 และไปถึงทะเลที่ 2 แล้ว และมีผลที่สามารถเทรดได้\nก่อนสั่งซื้อ ต้องมีผลราคาถูก (ผลกาก) ไว้ 1 ลูก สำหรับใช้เทรดรับผลที่สั่ง",
+    groups: [
+      // price: 0 = ยังไม่ตั้งราคา (แสดงเป็นสีเทา กดไม่ได้) | จำนวนสต๊อกตั้งได้ในหน้าแอดมิน
+      { title: "ไอดี Blox Fruits", cols: 2, items: [
+        { id: "acc-01", name: "เผ่าไซบอร์ก V4 T10", img: "a01", price: 0, stock: 0 },
+        { id: "acc-02", name: "โค้ดเผ่า V4 T10", img: "a02", price: 0, stock: 0 },
+        { id: "acc-03", name: "โมจิตื่น เผ่า V4 T10", img: "a03", price: 0, stock: 0 },
+        { id: "acc-04", name: "โค้ดต้นโมจิตื่น ดาบคู่", img: "a04", price: 0, stock: 0 },
+        { id: "acc-05", name: "โค้ดโมจิตื่น", img: "a05", price: 0, stock: 0 },
+        { id: "acc-06", name: "7 หมัด ดาบคู่", img: "a06", price: 0, stock: 0 },
+        { id: "acc-07", name: "โค้ดต้น 7 หมัด", img: "a07", price: 0, stock: 0 },
+        { id: "acc-08", name: "ไอดีต้นผลตื่น", img: "a08", price: 0, stock: 0 },
+        { id: "acc-09", name: "ไอดีต้นผลโมจิ", img: "a09", price: 0, stock: 0 },
+        { id: "acc-10", name: "เผ่ามังกร V4 T10", img: "a10", price: 0, stock: 0 },
+        { id: "acc-11", name: "7 หมัด เผ่ามังกร V4 T10", img: "a11", price: 0, stock: 0 },
+        { id: "acc-12", name: "ไอดีต้นเผ่า V4 T10", img: "a12", price: 0, stock: 0 },
+        { id: "acc-13", name: "เผ่ามนุษย์ V4 T10", img: "a13", price: 0, stock: 0 },
+        { id: "acc-14", name: "เผ่ามิ้งค์ V4 T10", img: "a14", price: 0, stock: 0 },
+        { id: "acc-15", name: "เผ่าสกาย V4 T10", img: "a15", price: 0, stock: 0 },
+        { id: "acc-16", name: "เผ่าเงือก V4 T10", img: "a16", price: 0, stock: 0 },
+        { id: "acc-17", name: "7 หมัด เผ่าไซบอร์ก V4 T10", img: "a17", price: 0, stock: 0 },
+        { id: "acc-18", name: "เผ่ากูล V4 T10", img: "a18", price: 0, stock: 0 },
+        { id: "acc-19", name: "ไอดีต้น 2-4 ผลแดง", img: "a19", price: 0, stock: 0 },
+        { id: "acc-20", name: "ไอดีต้นผลควบคุม", img: "a20", price: 0, stock: 0 },
+        { id: "acc-21", name: "ไอดีต้นผลจิ้งจอก", img: "a21", price: 0, stock: 0 },
+        { id: "acc-22", name: "ไอดีต้นผลเสือ", img: "a22", price: 0, stock: 0 },
+        { id: "acc-23", name: "ไอดีต้นผลเยติ", img: "a23", price: 0, stock: 0 },
+        { id: "acc-24", name: "ไอดีต้นผลประตู", img: "a24", price: 0, stock: 0 },
+        { id: "acc-25", name: "ไอดีต้นผลแก๊ส", img: "a25", price: 0, stock: 0 },
+        { id: "acc-26", name: "ไอดีต้นผลแรงโน้มถ่วง", img: "a26", price: 0, stock: 0 },
+        { id: "acc-27", name: "ไอดีต้นผล T-Rex", img: "a27", price: 0, stock: 0 },
+        { id: "acc-28", name: "ไอดีต้นผลช้าง", img: "a28", price: 0, stock: 0 },
+        { id: "acc-29", name: "ไอดีต้นผลพระ", img: "a29", price: 0, stock: 0 },
+        { id: "acc-30", name: "ไอดีต้นดาบคู่", img: "a30", price: 0, stock: 0 },
+        { id: "acc-31", name: "ไอดีต้นหมัดคืออต", img: "a31", price: 0, stock: 0 },
+        { id: "acc-32", name: "3-5 หมัด สุ่มผลแดง", img: "a32", price: 0, stock: 0 }
+      ]}
+    ]
+  },
   fruits: {
     idLabel: "ชื่อผู้ใช้ Roblox (Username)",
     intro: "กรอกชื่อผู้ใช้ Roblox เลือกผลที่ต้องการ แล้วกดสั่งซื้อ ทางร้านจะส่งผลให้ในเกม ห้ามกรอกรหัสผ่านเกม",

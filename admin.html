@@ -242,16 +242,18 @@ function viewOrders(){
 function viewBlox(){
   const box=setView('จัดการสินค้า Blox Fruit');
   const menu=el('div','chips');menu.style.gridTemplateColumns='1fr';
-  const b=el('button','','🍎 ผลปีศาจ');b.type='button';b.onclick=()=>viewFruits();
-  menu.appendChild(b);box.appendChild(menu);
+  const b=el('button','','🍎 ผลปีศาจ');b.type='button';b.onclick=()=>viewFruits('fruits');
+  const b2=el('button','','🆔 ไอดี');b2.type='button';b2.onclick=()=>viewFruits('idshop');
+  menu.appendChild(b);menu.appendChild(b2);box.appendChild(menu);
 }
-function viewFruits(){
-  const box=setView('ผลปีศาจ');
+function viewFruits(kind){
+  kind=kind||'fruits';
+  const box=setView(kind==='idshop'?'ไอดี Blox Fruits':'ผลปีศาจ');
   const back=el('button','btn alt','← กลับ');back.type='button';back.style.cssText='width:100%;margin-bottom:12px';back.onclick=()=>{stop();viewBlox()};
   box.appendChild(back);
   box.appendChild(el('p','mut','กรอกจำนวน Order ของผลนั้น แล้วกดบันทึก (0 = สีเทา ลูกค้ากดสั่งไม่ได้, 1 ขึ้นไป = มีสี)'));
   const list=el('div');box.appendChild(list);
-  const items=PACKS.fruits.groups.flatMap(g=>g.items);
+  const items=PACKS[kind].groups.flatMap(g=>g.items);
   const ref=doc(db,'system','fruitStock');
   const inputs={};let cur={};
   items.forEach(p=>{
