@@ -271,7 +271,7 @@ function gameGrid(){
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
 const fmt=n=>Number(n||0).toLocaleString('en-US');
 const when=ts=>{try{return ts.toDate().toLocaleString('th-TH')}catch(e){return ''}};
-const STAT={pending:'รอดำเนินการ',processing:'กำลังเติม...',review:'รอตรวจสอบ',failed:'ไม่สำเร็จ',done:'เติมเกมแล้ว',approved:'เติมเงินแล้ว',rejected:'ไม่ผ่าน',cancelled:'ยกเลิก'};
+const STAT={pending:'รอดำเนินการ',processing:'กำลังเติม...',review:'รอตรวจสอบ',failed:'ไม่สำเร็จ',done:'เติมสำเร็จ',approved:'เติมเงินแล้ว',rejected:'ไม่ผ่าน',cancelled:'ยกเลิก'};
 const chip=s=>{const c=el('span','chip'+(s==='done'||s==='approved'?' ok':(s==='rejected'||s==='cancelled'||s==='failed'?' no':'')),STAT[s]||s);return c};
 let unTab=null,unBal=null,curBal=0;
 function stopTab(){if(unTab){unTab();unTab=null}}
