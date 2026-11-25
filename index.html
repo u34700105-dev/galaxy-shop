@@ -232,7 +232,7 @@ input:focus-visible,button:focus-visible{outline:2px solid #c78bff;outline-offse
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,doc,setDoc,serverTimestamp,onSnapshot,collection,addDoc,query,where,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,doc,setDoc,serverTimestamp,onSnapshot,collection,addDoc,query,where,runTransaction,updateDoc} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {PACKS,findPack} from "./packs.js";
 const app=initializeApp({
   apiKey:"AIzaSyBn5DB363vlF__1KjhPEgEqGgONiaXZq10",
@@ -273,8 +273,8 @@ const fmt=n=>Number(n||0).toLocaleString('en-US');
 const when=ts=>{try{return ts.toDate().toLocaleString('th-TH')}catch(e){return ''}};
 const STAT={pending:'รอดำเนินการ',processing:'กำลังเติม...',review:'รอตรวจสอบ',failed:'ไม่สำเร็จ',done:'เติมสำเร็จ',approved:'เติมเงินแล้ว',rejected:'ไม่ผ่าน',cancelled:'ยกเลิก'};
 const chip=s=>{const c=el('span','chip'+(s==='done'||s==='approved'?' ok':(s==='rejected'||s==='cancelled'||s==='failed'?' no':'')),STAT[s]||s);return c};
-let unTab=null,unBal=null,curBal=0;
-function stopTab(){if(unTab){unTab();unTab=null}}
+let unTab=null,unBal=null,curBal=0,stopOrdersOv=null;
+function stopTab(){if(unTab){unTab();unTab=null}if(stopOrdersOv){stopOrdersOv();stopOrdersOv=null}}
 function compress(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file);const im=new Image();
   im.onload=()=>{const s=Math.min(1,900/Math.max(im.width,im.height));const w=Math.round(im.width*s),h=Math.round(im.height*s);
     const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);URL.revokeObjectURL(url);
@@ -481,13 +481,57 @@ function topupCard9(){
 }
 function renderOrders(ac){
   ac.appendChild(el('h2','gh','รายการสั่งซื้อล่าสุด'));
+  const bar=el('div');bar.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px';ac.appendChild(bar);
   const list=el('div');ac.appendChild(list);
+  let rows=[],openGame=null,ov=null;
+  const closeOv=()=>{if(ov){ov.remove();ov=null}openGame=null};
+  const drawOv=()=>{
+    if(!openGame)return;
+    const mine=rows.filter(o=>o.game===openGame);
+    if(!mine.length){closeOv();return}
+    if(!ov){
+      ov=el('div');ov.style.cssText='position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.75);display:grid;place-items:center;padding:14px';
+      ov.onclick=ev=>{if(ev.target===ov)closeOv()};document.body.appendChild(ov);
+    }
+    ov.textContent='';
+    const box=el('div');box.setAttribute('role','dialog');box.style.cssText='width:100%;max-width:420px;max-height:80vh;overflow:auto;background:#140c2e;border:2px solid #b45cff;border-radius:18px;padding:16px;box-shadow:0 0 24px rgba(160,80,255,.5)';
+    const hd=el('div');hd.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px';
+    hd.appendChild(el('b','',openGame));
+    const x=el('button','','✕');x.type='button';x.setAttribute('aria-label','ปิด');x.style.cssText='width:38px;height:38px;border:1px solid #b45cff;border-radius:10px;background:#1a0b3d;color:#fff;font-size:18px;cursor:pointer';x.onclick=closeOv;hd.appendChild(x);box.appendChild(hd);
+    const fruit=openGame==='ขายผลปีศาจ';
+    mine.forEach(o=>{
+      const c=el('div','it');
+      const t=el('div');t.appendChild(chip(o.status));t.appendChild(el('b','',fruit?'ผลที่ซื้อ: '+o.item:o.item));c.appendChild(t);
+      c.appendChild(el('div','',(fruit?'ติดต่อ: ':'ID: ')+o.playerId));
+      c.appendChild(el('div','mut','วันที่ '+when(o.createdAt)));
+      const busy=o.status==='pending'||o.status==='processing'||o.status==='review';
+      if(busy){c.appendChild(el('div','mut','ลบไม่ได้ขณะที่ร้านกำลังดำเนินการ'))}
+      else{
+        const d=el('button','','🗑 ลบรายการนี้');d.type='button';d.style.cssText='width:100%;height:42px;margin-top:8px;border-radius:10px;border:1px solid #ff7b9c;background:#2a1030;color:#ff7b9c;font:inherit;cursor:pointer';
+        d.onclick=async()=>{
+          if(!confirm('ลบรายการนี้ออกจากหน้าของคุณ?'))return;
+          d.disabled=true;
+          try{await updateDoc(doc(db,'orders',o.id),{hiddenByUser:true})}catch(err){d.disabled=false;alert('ลบไม่สำเร็จ ลองใหม่อีกครั้ง')}
+        };
+        c.appendChild(d);
+      }
+      box.appendChild(c);
+    });
+    ov.appendChild(box);
+  };
+  stopOrdersOv=closeOv;
   unTab=onSnapshot(query(collection(db,'orders'),where('uid','==',auth.currentUser.uid)),snap=>{
-    const rows=snap.docs.map(d=>d.data()).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,30);
+    rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(o=>!o.hiddenByUser).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,30);
+    bar.textContent='';
+    [...new Set(rows.map(o=>o.game))].forEach(g=>{
+      const b=el('button','chip',g+' ('+rows.filter(o=>o.game===g).length+') ›');b.type='button';b.style.cssText='float:none;padding:8px 14px;font:inherit;font-size:14px;background:#1d1440;color:#fff;cursor:pointer';
+      b.onclick=()=>{openGame=g;drawOv()};bar.appendChild(b);
+    });
     list.textContent='';
-    if(!rows.length){list.appendChild(el('p','gs','ยังไม่มีรายการสั่งซื้อ'));return}
+    if(!rows.length){list.appendChild(el('p','gs','ยังไม่มีรายการสั่งซื้อ'));drawOv();return}
     rows.forEach(o=>{const c=el('div','it');const t=el('div');t.appendChild(chip(o.status));t.appendChild(el('b','',o.game));c.appendChild(t);
       const pk=o.packId?findPack(o.packId):null;c.appendChild(el('div','',o.item+' · ID: '+o.playerId+(pk?' · '+fmt(o.price||pk.price)+' กีบ':'')));if(o.failureReason)c.appendChild(el('div','mut',o.failureReason+(o.refunded?' (คืนเงินแล้ว)':'')));c.appendChild(el('div','mut',when(o.createdAt)));list.appendChild(c)});
+    drawOv();
   },()=>{list.textContent='โหลดรายการไม่สำเร็จ'});
 }
 function topupBcel(ac){
