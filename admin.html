@@ -97,6 +97,7 @@ body.homebg{background:#0a0420}
     <button type="button" data-v="slips">🧾 ตรวจสลิป</button>
     <button type="button" data-v="orders">📦 ออเดอร์ที่รอส่ง</button>
     <button type="button" data-v="blox">🍎 จัดการสินค้า Blox Fruit</button>
+    <button type="button" data-v="idord">🆔 จัดการ order ID</button>
     <button type="button" data-v="price">💰 ราคาสินค้า</button>
     <div class="mrow"><button type="button" data-v="reset" class="rst">🔄 Reset</button><button type="button" data-v="reg">➕ สมัครสมาชิกให้ลูกค้า</button></div>
     <button type="button" data-v="out">ออกจากระบบ</button>
@@ -109,7 +110,7 @@ body.homebg{background:#0a0420}
 import {PACKS,findPack} from "./packs.js";
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,setDoc,doc,getDoc,updateDoc,addDoc,deleteDoc,collection,query,where,onSnapshot,runTransaction,serverTimestamp,deleteField} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,setDoc,doc,getDoc,updateDoc,addDoc,deleteDoc,collection,query,where,onSnapshot,runTransaction,serverTimestamp,deleteField,writeBatch} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const CFG={
   apiKey:"AIzaSyBn5DB363vlF__1KjhPEgEqGgONiaXZq10",
   authDomain:"galaxy-shop-8cb4b.firebaseapp.com",
@@ -157,7 +158,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();$('lb')
 $('lb').onclick=()=>$('lb').hidden=true;
 function go(v){
   stop();
-  if(v==='slips')viewSlips();else if(v==='blox')viewBlox();else if(v==='orders')viewOrders();else if(v==='reg')viewReg();else if(v==='price')viewPriceMenu();else if(v==='reset')doReset();else signOut(auth);
+  if(v==='slips')viewSlips();else if(v==='blox')viewBlox();else if(v==='orders')viewOrders();else if(v==='reg')viewReg();else if(v==='price')viewPriceMenu();else if(v==='idord')viewIdOrders();else if(v==='reset')doReset();else signOut(auth);
 }
 $('menu').onclick=e=>{const b=e.target.closest('button');if(!b)return;closeMenu();go(b.dataset.v)};
 function setView(title){
@@ -217,7 +218,7 @@ function viewReg(){
 function viewOrders(){
   const box=setView('ออเดอร์ที่รอส่ง');
   unsub=onSnapshot(query(collection(db,'orders'),where('status','==','pending')),snap=>{
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>secs(a)-secs(b));
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(o=>!o.accId).sort((a,b)=>secs(a)-secs(b));
     box.replaceChildren();
     if(!rows.length){box.appendChild(el('p','mut','ยังไม่มีออเดอร์ที่รอส่ง'));return}
     box.appendChild(el('p','mut cnt','รอส่ง '+rows.length+' รายการ'));
@@ -239,13 +240,74 @@ function viewOrders(){
   },e=>toast('โหลดออเดอร์ไม่สำเร็จ: '+(e.code||'')));
 }
 
+
+/* จัดการ order ID: เพิ่มไอดี Blox Fruits (ชื่อ+รหัสผ่าน Roblox) เข้าสต๊อกของแต่ละรายการ ลูกค้าซื้อแล้วระบบส่งให้เองในหน้าประวัติ */
+function viewIdOrders(){
+  const box=setView('จัดการ order ID');
+  const items=PACKS.dungeon.groups.flatMap(g=>g.items);
+  const nameOf=Object.fromEntries(items.map(p=>[p.id,p.name]));
+  const form=el('div','card');
+  form.appendChild(el('b','','➕ เพิ่มไอดีเข้าสต๊อก'));
+  const sel=document.createElement('select');sel.setAttribute('aria-label','เลือกรายการ');sel.style.cssText='width:100%;height:44px;margin-top:8px;border-radius:10px;background:#1d1440;color:#fff;border:1px solid #4a3a8a;font:inherit;padding:0 8px';
+  items.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o)});
+  const u=document.createElement('input');u.placeholder='ชื่อผู้ใช้ Roblox';u.autocomplete='off';u.style.cssText='width:100%;height:44px;margin-top:8px';
+  const pw=document.createElement('input');pw.placeholder='รหัสผ่าน Roblox';pw.autocomplete='off';pw.style.cssText='width:100%;height:44px;margin-top:8px';
+  const add=el('button','btn','เพิ่มไอดี');add.type='button';add.style.cssText='width:100%;margin-top:8px';
+  [sel,u,pw,add].forEach(x=>form.appendChild(x));box.appendChild(form);
+  add.onclick=async()=>{
+    const us=u.value.trim(),ps=pw.value.trim();
+    if(!us||!ps){toast('กรอกชื่อผู้ใช้และรหัสผ่านให้ครบ');return}
+    add.disabled=true;
+    try{
+      const pref=doc(collection(db,'idPool')),sref=doc(db,'idSecrets',pref.id),b=writeBatch(db);
+      b.set(pref,{item:sel.value,sold:false,createdAt:serverTimestamp()});
+      b.set(sref,{item:sel.value,user:us,pass:ps,createdAt:serverTimestamp()});
+      await b.commit();u.value='';pw.value='';toast('เพิ่มไอดีเข้า '+nameOf[sel.value]+' แล้ว');
+    }catch(e){toast(emsg(e))}
+    add.disabled=false;
+  };
+  const sum=el('div','');sum.style.marginTop='12px';box.appendChild(sum);
+  const list=el('div');box.appendChild(list);
+  let pool=[],sec={};
+  const draw=()=>{
+    sum.replaceChildren();list.replaceChildren();
+    const left={},sold={};
+    pool.forEach(x=>{if(x.sold)sold[x.item]=(sold[x.item]||0)+1;else left[x.item]=(left[x.item]||0)+1});
+    sum.appendChild(el('p','mut cnt','พร้อมขาย '+pool.filter(x=>!x.sold).length+' ไอดี · ขายแล้ว '+pool.filter(x=>x.sold).length+' ไอดี'));
+    const rows=pool.slice().sort((a,b)=>(a.sold-b.sold)||items.findIndex(p=>p.id===a.item)-items.findIndex(p=>p.id===b.item)||secs(b)-secs(a));
+    rows.forEach(x=>{
+      const s=sec[x.id]||{};
+      const c=el('div','card');
+      c.appendChild(el('b','',(nameOf[x.item]||x.item)));
+      c.appendChild(el('div',x.sold?'mut':'ok',x.sold?'ขายแล้ว':'พร้อมขาย'));
+      c.appendChild(el('div','','ชื่อ: '+(s.user||'-')));
+      c.appendChild(el('div','','รหัส: '+(s.pass||'-')));
+      if(x.sold){const w=el('div','mut','ผู้ซื้อ: ...');c.appendChild(w);
+        getDoc(doc(db,'users',x.buyer)).then(r=>{w.textContent='ผู้ซื้อ: '+(r.exists()?r.data().username:x.buyer)}).catch(()=>{w.textContent='ผู้ซื้อ: '+x.buyer})}
+      else{
+        const del=el('button','btn alt','🗑 ลบไอดีนี้');del.type='button';del.style.cssText='width:100%;margin-top:8px';
+        del.onclick=async()=>{
+          if(!confirm('ลบไอดี '+(s.user||'')+' ออกจากสต๊อก?'))return;
+          del.disabled=true;
+          try{const b=writeBatch(db);b.delete(doc(db,'idPool',x.id));b.delete(doc(db,'idSecrets',x.id));await b.commit()}
+          catch(e){toast(emsg(e));del.disabled=false}
+        };
+        c.appendChild(del);
+      }
+      list.appendChild(c);
+    });
+  };
+  const u1=onSnapshot(collection(db,'idPool'),s=>{pool=s.docs.map(d=>({id:d.id,...d.data()}));draw()},e=>toast('โหลดไม่สำเร็จ: '+(e.code||'')));
+  const u2=onSnapshot(collection(db,'idSecrets'),s=>{sec={};s.forEach(d=>{sec[d.id]=d.data()});draw()},e=>toast('โหลดไม่สำเร็จ: '+(e.code||'')));
+  unsub=()=>{u1();u2()};
+}
+
 /* จัดการสินค้า Blox Fruit */
 function viewBlox(){
   const box=setView('จัดการสินค้า Blox Fruit');
   const menu=el('div','chips');menu.style.gridTemplateColumns='1fr';
   const b=el('button','','🍎 ผลปีศาจ');b.type='button';b.onclick=()=>viewFruits('fruits');
-  const b2=el('button','','🆔 ไอดี');b2.type='button';b2.onclick=()=>viewFruits('dungeon');
-  menu.appendChild(b);menu.appendChild(b2);box.appendChild(menu);
+  menu.appendChild(b);box.appendChild(menu);
 }
 function viewFruits(kind){
   kind=kind||'fruits';

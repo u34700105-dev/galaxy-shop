@@ -355,7 +355,19 @@ function showOrderToast(item){
   const ok=el('button','ot-ok','OK');ok.type='button';ok.onclick=close;box.appendChild(ok);
   document.body.appendChild(ov);
 }
-let fruitStock={},soldMap={},curPack=null;
+let fruitStock={},soldMap={},poolLeft={},poolIds={},curPack=null;
+function showIdResult(p,sec){
+  const ov=el('div','');ov.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,2,22,.72)';
+  const box=el('div','');box.setAttribute('role','dialog');box.style.cssText='width:100%;max-width:340px;padding:20px;border-radius:18px;background:#fff;color:#222;text-align:center';
+  box.appendChild(el('h3','','สั่งซื้อสำเร็จ'));
+  box.appendChild(el('p','',p.name));
+  if(sec){
+    [['ชื่อผู้ใช้ Roblox',sec.user],['รหัสผ่าน',sec.pass]].forEach(r=>{const d=el('div','');d.style.cssText='margin:8px 0;padding:8px;border-radius:10px;background:#f1ecff;word-break:break-all;user-select:all';d.appendChild(el('small','',r[0]+':'));d.appendChild(document.createElement('br'));d.appendChild(el('b','',r[1]));box.appendChild(d)});
+    box.appendChild(el('p','','ดูไอดีนี้ย้อนหลังได้ที่หน้า "ประวัติ"'));
+  }else box.appendChild(el('p','','ดูชื่อผู้ใช้และรหัสผ่านได้ที่หน้า "ประวัติ"'));
+  const ok=el('button','ot-ok','OK');ok.type='button';ok.onclick=()=>ov.remove();box.appendChild(ok);
+  ov.appendChild(box);document.body.appendChild(ov);
+}
 function accModal(p){
   const ov=el('div','');ov.style.cssText='position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,2,22,.72)';
   const box=el('div','');box.setAttribute('role','dialog');box.style.cssText='width:100%;max-width:340px;padding:18px;border:1.5px solid #b07cff;border-radius:18px;background:linear-gradient(160deg,#241056,#0f0828);color:#fff;text-align:center';
@@ -373,19 +385,34 @@ function accModal(p){
     if(curBal<p.price){msg.textContent='ยอดเงินไม่พอ (มี '+fmt(curBal)+' กีบ) กรุณาเติมเครดิตก่อน';return}
     ok.disabled=no.disabled=true;
     try{
-      const odata={uid:auth.currentUser.uid,username:who,game:'ขายไอดี',playerId:'ทักแชท',item:p.name,packId:p.id,price:p.price,status:'pending',createdAt:serverTimestamp()};
-      const uref=doc(db,'users',auth.currentUser.uid),sref=doc(db,'system','fruitStock'),oref=doc(collection(db,'orders'));
-      await runTransaction(db,async tx=>{
-        const us=await tx.get(uref),bal=us.exists()&&Number.isFinite(us.data().balance)?us.data().balance:0;
-        const ss=await tx.get(sref),cur=ss.exists()&&Number.isFinite(ss.data()[p.id])?ss.data()[p.id]:0;
-        if(bal<p.price)throw new Error('ยอดเงินไม่พอ กรุณาเติมเครดิตก่อน');
-        if(cur<=0)throw new Error('ไอดีนี้หมดแล้ว');
-        tx.update(uref,{balance:bal-p.price});
-        tx.update(sref,{[p.id]:cur-1});
-        tx.set(oref,odata);
-      });
-      try{await updateDoc(doc(db,'system','idSold'),{[p.id]:increment(1)})}catch(e){}
-      close();showOrderToast(p);
+      const uid=auth.currentUser.uid;
+      const cands=(poolIds[p.id]||[]).slice().sort(()=>Math.random()-.5);
+      if(!cands.length)throw new Error('ไอดีนี้หมดแล้ว');
+      let got=null,lastErr=null;
+      for(const accId of cands){
+        const uref=doc(db,'users',uid),pref=doc(db,'idPool',accId),oref=doc(collection(db,'orders'));
+        const odata={uid:uid,username:who,game:'ขายไอดี',playerId:'ดูในประวัติ',item:p.name,packId:p.id,accId:accId,price:p.price,status:'pending',createdAt:serverTimestamp()};
+        try{
+          await runTransaction(db,async tx=>{
+            const us=await tx.get(uref),bal=us.exists()&&Number.isFinite(us.data().balance)?us.data().balance:0;
+            const ps=await tx.get(pref);
+            if(!ps.exists()||ps.data().sold)throw new Error('TAKEN');
+            if(bal<p.price)throw new Error('ยอดเงินไม่พอ กรุณาเติมเครดิตก่อน');
+            tx.update(uref,{balance:bal-p.price});
+            tx.update(pref,{sold:true,buyer:uid,orderId:oref.id});
+            tx.set(oref,odata);
+          });
+          got=accId;break;
+        }catch(e){
+          lastErr=e;
+          if(e&&(e.message==='TAKEN'||e.code==='permission-denied'||e.code==='aborted'))continue;
+          throw e;
+        }
+      }
+      if(!got)throw (lastErr&&lastErr.code==='permission-denied')?lastErr:new Error('ไอดีนี้หมดแล้ว');
+      let sec=null;try{const sd=await getDoc(doc(db,'idSecrets',got));if(sd.exists())sec=sd.data()}catch(e){}
+      showIdResult(p,sec);
+      close();return;
     }catch(e){
       msg.textContent=(e&&e.message&&(e.message==='ไอดีนี้หมดแล้ว'||e.message.indexOf('ยอดเงินไม่พอ')===0))?e.message:errText(e);
       ok.disabled=no.disabled=false;
@@ -439,7 +466,7 @@ function showAccounts(g){
 }
 
 import('./idimgs.js').then(m=>{Object.assign(FRUIT_IMGS,m.IDIMGS||{});if(curPack&&curPack.id==='dungeon'&&$('ac')&&$('ac').querySelector('.packs'))showPacks(curPack)}).catch(()=>{});
-const stockOf=p=>Number.isFinite(fruitStock[p.id])?fruitStock[p.id]:(p.stock||0);
+const stockOf=p=>/^acc-/.test(p.id)?(poolLeft[p.id]||0):(Number.isFinite(fruitStock[p.id])?fruitStock[p.id]:(p.stock||0));
 function showPacks(g){
   curPack=g;
   if(g.id==='dungeon'){showAccounts(g);return}
@@ -586,10 +613,13 @@ function renderOrders(ac){
     const fruit=openGame==='ขายผลปีศาจ'||openGame==='ขายไอดี',flbl=openGame==='ขายไอดี'?'ไอดีที่ซื้อ: ':'ผลที่ซื้อ: ';
     mine.forEach(o=>{
       const c=el('div','it');
-      const t=el('div');t.appendChild(chip(o.status));t.appendChild(el('b','',fruit?flbl+o.item:o.item));c.appendChild(t);
-      c.appendChild(el('div','',(fruit?'ติดต่อ: ':'ID: ')+o.playerId));
+      const t=el('div');t.appendChild(chip(o.accId?'done':o.status));t.appendChild(el('b','',fruit?flbl+o.item:o.item));c.appendChild(t);
+      if(o.accId){
+        const sb=el('div','');sb.style.cssText='margin:6px 0;padding:8px;border-radius:10px;background:#1d1440;word-break:break-all;user-select:all';sb.textContent='กำลังโหลดไอดี...';c.appendChild(sb);
+        getDoc(doc(db,'idSecrets',o.accId)).then(sd=>{sb.textContent='';if(!sd.exists()){sb.textContent='ไม่พบข้อมูลไอดี กรุณาทักร้าน';return}const x=sd.data();sb.appendChild(el('div','','ชื่อผู้ใช้: '+x.user));sb.appendChild(el('div','','รหัสผ่าน: '+x.pass))}).catch(()=>{sb.textContent='โหลดไอดีไม่สำเร็จ ลองเปิดใหม่อีกครั้ง'});
+      }else c.appendChild(el('div','',(fruit?'ติดต่อ: ':'ID: ')+o.playerId));
       c.appendChild(el('div','mut','วันที่ '+when(o.createdAt)));
-      const busy=o.status==='pending'||o.status==='processing'||o.status==='review';
+      const busy=!o.accId&&(o.status==='pending'||o.status==='processing'||o.status==='review');
       if(busy){c.appendChild(el('div','mut','ลบไม่ได้ขณะที่ร้านกำลังดำเนินการ'))}
       else{
         const d=el('button','','🗑 ลบรายการนี้');d.type='button';d.style.cssText='width:100%;height:42px;margin-top:8px;border-radius:10px;border:1px solid #ff7b9c;background:#2a1030;color:#ff7b9c;font:inherit;cursor:pointer';
@@ -731,8 +761,9 @@ $('rgo').onclick=async()=>{
       const a=$('ac');
       if(curPack&&(curPack.id==='fruits'||curPack.id==='dungeon')&&a&&a.querySelector('.packs')&&(a.querySelector('h2.gh')||{}).textContent===curPack.name)showPacks(curPack);
     },()=>{});
-    onSnapshot(doc(db,'system','idSold'),s=>{
-      soldMap=s.exists()?(s.data()||{}):{};
+    onSnapshot(collection(db,'idPool'),s=>{
+      soldMap={};poolLeft={};poolIds={};
+      s.forEach(d=>{const x=d.data()||{},k=x.item;if(!k)return;if(x.sold)soldMap[k]=(soldMap[k]||0)+1;else{poolLeft[k]=(poolLeft[k]||0)+1;(poolIds[k]=poolIds[k]||[]).push(d.id)}});
       const a=$('ac');
       if(curPack&&curPack.id==='dungeon'&&a&&a.querySelector('.packs')&&(a.querySelector('h2.gh')||{}).textContent===curPack.name)showPacks(curPack);
     },()=>{});
