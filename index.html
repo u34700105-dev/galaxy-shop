@@ -333,7 +333,7 @@ function showFree(g){
   };
 }
 const SHOP_PHONE='2092018344';
-function showOrderToast(item){
+function otCss(){
   if(!$('ottcss')){const st=document.createElement('style');st.id='ottcss';st.textContent=
    '.ot-ov{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.4)}'+
    '.ot-box{width:100%;max-width:320px;padding:26px 20px 22px;border-radius:14px;background:#fff;text-align:center;color:#545454;box-shadow:0 8px 30px rgba(0,0,0,.35);animation:otp .25s ease-out}'+
@@ -345,6 +345,9 @@ function showOrderToast(item){
    '.ot-ok{min-width:96px;height:42px;padding:0 28px;border:0;border-radius:8px;background:#7066e0;color:#fff;font:inherit;font-size:16px;cursor:pointer}'+
    '.ot-ok:active{background:#5b52c4}';
    document.head.appendChild(st)}
+}
+function showOrderToast(item){
+  otCss();
   const ov=el('div','ot-ov'),box=el('div','ot-box');ov.appendChild(box);
   const close=()=>{if(ov.parentNode)ov.parentNode.removeChild(ov)};
   ov.onclick=e=>{if(e.target===ov)close()};
@@ -355,30 +358,38 @@ function showOrderToast(item){
   const ok=el('button','ot-ok','OK');ok.type='button';ok.onclick=close;box.appendChild(ok);
   document.body.appendChild(ov);
 }
-let fruitStock={},soldMap={},poolLeft={},poolIds={},curPack=null;
+let fruitStock={},soldMap={},poolLeft={},poolIds={},curPack=null,openAfter=null;
 function showIdResult(p,sec){
-  const ov=el('div','');ov.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,2,22,.72)';
-  const box=el('div','');box.setAttribute('role','dialog');box.style.cssText='width:100%;max-width:340px;padding:20px;border-radius:18px;background:#fff;color:#222;text-align:center';
-  box.appendChild(el('h3','','สั่งซื้อสำเร็จ'));
-  box.appendChild(el('p','',p.name));
-  if(sec){
-    [['ชื่อผู้ใช้ Roblox',sec.user],['รหัสผ่าน',sec.pass]].forEach(r=>{const d=el('div','');d.style.cssText='margin:8px 0;padding:8px;border-radius:10px;background:#f1ecff;word-break:break-all;user-select:all';d.appendChild(el('small','',r[0]+':'));d.appendChild(document.createElement('br'));d.appendChild(el('b','',r[1]));box.appendChild(d)});
-    box.appendChild(el('p','','ดูไอดีนี้ย้อนหลังได้ที่หน้า "ประวัติ"'));
-  }else box.appendChild(el('p','','ดูชื่อผู้ใช้และรหัสผ่านได้ที่หน้า "ประวัติ"'));
-  const ok=el('button','ot-ok','OK');ok.type='button';ok.onclick=()=>ov.remove();box.appendChild(ok);
-  ov.appendChild(box);document.body.appendChild(ov);
+  otCss();
+  const ov=el('div','ot-ov'),box=el('div','ot-box');ov.appendChild(box);
+  box.appendChild(el('div','ot-ic','✓'));
+  box.appendChild(el('h3','ot-t','สั่งซื้อสำเร็จ'));
+  box.appendChild(el('p','ot-p',p.name));
+  box.appendChild(el('p','ot-p','ระบบส่งไอดีให้แล้ว กด OK เพื่อดูชื่อผู้ใช้และรหัสผ่านในหน้าประวัติ'));
+  const ok=el('button','ot-ok','OK');ok.type='button';ok.style.marginTop='14px';ok.onclick=()=>{ov.remove();openAfter='ขายไอดี';tab('orders')};box.appendChild(ok);
+  document.body.appendChild(ov);
 }
 function accModal(p){
-  const ov=el('div','');ov.style.cssText='position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,2,22,.72)';
-  const box=el('div','');box.setAttribute('role','dialog');box.style.cssText='width:100%;max-width:340px;padding:18px;border:1.5px solid #b07cff;border-radius:18px;background:linear-gradient(160deg,#241056,#0f0828);color:#fff;text-align:center';
+  otCss();
+  const ov=el('div','ot-ov');ov.style.zIndex=9998;
+  const box=el('div','ot-box');box.setAttribute('role','dialog');box.style.cssText='max-width:340px;padding:20px 16px 18px;color:#444;text-align:left';
   const close=()=>{if(ov.parentNode)ov.parentNode.removeChild(ov)};
   ov.onclick=e=>{if(e.target===ov)close()};
-  box.appendChild(el('b','',p.name));
-  box.appendChild(el('p','',fmt(p.price)+' กีบ'));
-  const msg=el('p','msg');msg.setAttribute('role','status');
-  const row=el('div','');row.style.cssText='display:flex;gap:8px;margin-top:10px';
-  const ok=el('button','btn','ยืนยันซื้อ');ok.type='button';
-  const no=el('button','btn','ยกเลิก');no.type='button';no.style.background='#1d1440';no.onclick=close;
+  const ic=el('div','','i');ic.style.cssText='width:56px;height:56px;margin:0 auto 8px;border:3px solid #9de0f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;color:#3fc3ee';box.appendChild(ic);
+  const t=el('h3','','ยืนยันการซื้อ');t.style.cssText='margin:0 0 10px;text-align:center;font-size:22px;color:#3a3a3a';box.appendChild(t);
+  const row0=el('div','');row0.style.cssText='display:flex;gap:10px;align-items:flex-start';
+  const im=document.createElement('img');im.src=FRUIT_IMGS[p.img]||'';im.alt='';im.style.cssText='width:92px;height:auto;border-radius:8px;flex:none';
+  const info=el('div','');info.style.cssText='font-size:13px;line-height:1.5;min-width:0';
+  const nm=el('b','','ชื่อ: '+p.name);nm.style.display='block';info.appendChild(nm);
+  (p.det||[]).forEach(d=>info.appendChild(el('div','','✔ '+d)));
+  const pr=el('div','','ราคา '+fmt(p.price)+' กีบ');pr.style.cssText='margin-top:4px;font-weight:700;color:#d9480f';info.appendChild(pr);
+  row0.appendChild(im);row0.appendChild(info);box.appendChild(row0);
+  const note=el('div','','ตรวจสอบรายละเอียดให้ครบก่อนกดซื้อ เมื่อกด "ซื้อสินค้า" ระบบจะหักเงินและส่งชื่อผู้ใช้กับรหัสผ่านให้ทันที ไม่สามารถยกเลิกหรือขอคืนเงินได้');
+  note.style.cssText='margin:12px 0 4px;padding:8px 10px;border-radius:8px;background:#fff3cd;color:#7a5b00;font-size:12px;line-height:1.5';box.appendChild(note);
+  const msg=el('p','msg');msg.setAttribute('role','status');msg.style.cssText='margin:6px 0 0;font-size:13px;color:#d33;text-align:center';
+  const row=el('div','');row.style.cssText='display:flex;gap:8px;justify-content:center;margin-top:12px';
+  const ok=el('button','ot-ok','ซื้อสินค้า');ok.type='button';ok.style.cssText='min-width:110px;background:#3085d6';
+  const no=el('button','ot-ok','ยกเลิก');no.type='button';no.style.cssText='min-width:110px;background:#6e7881';no.onclick=close;
   row.appendChild(ok);row.appendChild(no);box.appendChild(row);box.appendChild(msg);ov.appendChild(box);document.body.appendChild(ov);
   ok.onclick=async()=>{
     msg.textContent='';msg.className='msg err';
@@ -642,6 +653,7 @@ function renderOrders(ac){
       const b=el('button','chip',g+' ('+rows.filter(o=>o.game===g).length+') ›');b.type='button';b.style.cssText='float:none;padding:8px 14px;font:inherit;font-size:14px;background:#1d1440;color:#fff;cursor:pointer';
       b.onclick=()=>{openGame=g;drawOv()};bar.appendChild(b);
     });
+    if(openAfter&&rows.some(o=>o.game===openAfter)){openGame=openAfter;openAfter=null}
     list.textContent='';
     if(!rows.length){list.appendChild(el('p','gs','ยังไม่มีรายการสั่งซื้อ'));drawOv();return}
     rows.forEach(o=>{const c=el('div','it');const t=el('div');t.appendChild(chip(o.status));t.appendChild(el('b','',o.game));c.appendChild(t);
